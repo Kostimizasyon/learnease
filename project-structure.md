@@ -95,3 +95,4 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - [x] **Chunk 5**: Home Flow & Active Session UI
 - [x] **Chunk 6**: Library, Rename, Folders & Playback
 - [x] **Chunk 7**: App Icon, Polish & Release Readiness
+- [ ] **Chunk 8**: Wear OS Companion & Extended Window

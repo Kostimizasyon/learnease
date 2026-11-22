@@ -174,5 +174,10 @@ Halt after each chunk: tests run, docs updated, commit made, brief summary, wait
 - **Chunk 7: App Icon, Polish & Release Readiness**
   - Adaptive icon, empty/error states, edge cases (permission revoked mid-session, low storage, service killed, rapid repeated saves, save pressed before the buffer is full, overlay dismissed while a save is encoding, memory pressure).
   - Full `flutter analyze` + `flutter test` + Kotlin tests, final doc pass, and a manual QA checklist in `README.md`.
+- **Chunk 8: Wear OS Companion & Extended Window**
+  - Allocate `X + 4` seconds in `AudioRingBuffer` (`snapshotLastBytes()` for exact `X`s on phone overlay taps vs full `X + 4`s on watch pings to absorb reaction + Bluetooth latency).
+  - Add Wearable Data Layer (`play-services-wearable`) + `WearListenerService` on the phone (`android/app`) to handle `/learnese/save_clip` pings when a session is active and reply with `saved` / `no_active_session` acknowledgements.
+  - Queue/reconcile clips saved while the phone screen is locked or Flutter UI is backgrounded (`SessionController.syncWithNative()`).
+  - Add a minimal `:wear` Wear OS companion module (one-tap Save Clip UI + haptic feedback for success/idle) and unit tests for extended-window slicing and pending-clip reconciliation.
 
 Start immediately with **Chunk 1** only.
