@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 /// Single source of truth for the Learnese color palette.
 /// Native overlay colors are mirrored in android/app/src/main/res/values/colors.xml.
 abstract final class AppColors {
+  static const Color transparent = Color(0x00000000);
+
   // Primary — Deep Teal
   static const Color primaryLight = Color(0xFF0F766E);
   static const Color onPrimaryLight = Color(0xFFFFFFFF);

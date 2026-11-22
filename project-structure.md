@@ -34,7 +34,7 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `android/app/src/test/kotlin/com/learnese/app/OverlayGeometryTest.kt` — JUnit tests for edge snapping, Y-inset clamping, dismiss hit area, tap vs drag detection, and `TapDebouncer`.
 
 ### Flutter App (`lib/`)
-- `lib/main.dart` — App entry point (`LearneseApp`) wired to light/dark themes and a temporary bootstrap shell.
+- `lib/main.dart` — App entry point (`LearneseApp`) wiring services, `SessionController`, notification-tap tab routing, light/dark themes, and Record/Library navigation.
 - `lib/theme/app_colors.dart` — Centralized color palette (deep teal primary, neutral slate surfaces, red reserved for recording/destructive state, overlay tokens).
 - `lib/theme/app_theme.dart` — Material 3 `AppTheme.light()` / `AppTheme.dark()` and `AppRecordingColors` `ThemeExtension`.
 - `lib/data_models/recording_session.dart` — `RecordingSession` entity (`sessions` table), buffer bounds (`1..180s`), default naming (`Session YYYY-MM-DD HH:mm`), and serialization.
@@ -48,7 +48,13 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `lib/services/preferences_service.dart` — `SharedPreferences` wrapper for last buffer length (`1..180s`) and onboarding hint flags.
 - `lib/services/recorder_channel.dart` — `MethodChannel`/`EventChannel` wrapper (`startSession`, `saveClip`, `stopSession`, `getState`, `hasOverlayPermission`, `openOverlayPermissionSettings`, `stateStream`, notification deep-link hooks).
 - `lib/services/permission_service.dart` — Testable runtime permission wrapper (`RECORD_AUDIO`, `POST_NOTIFICATIONS`, `SYSTEM_ALERT_WINDOW`) with `PermissionGateway`.
+- `lib/services/session_controller.dart` — `ChangeNotifier` orchestrating session start/stop, native event stream ingestion, clip DB persistence with deduplication, stale-session reconciliation, and notification deep-link callbacks.
+- `lib/pages/util/custom_app_bar.dart` — `CustomAppBar.standard()` and `CustomAppBar.recording()` with live recording dot indicator.
 - `lib/pages/util/permission_gate.dart` — Reusable permission setup widget (`PermissionGate.sessionSetup()`, `PermissionGate.overlayOnly()`) with lifecycle-resume re-check after returning from Android overlay Settings.
+- `lib/pages/home_page/util/buffer_length_picker.dart` — `BufferLengthChip.preset()`, `BufferLengthChip.custom()`, and `BufferLengthPicker` (15/30/60/120s + custom 1–180s dialog + RAM estimate).
+- `lib/pages/home_page/util/record_button.dart` — `RecordButton.start()` and `RecordButton.stop()`.
+- `lib/pages/home_page/home_page.dart` — Idle recording setup screen (buffer length picker, Record Now, permission gate dialog, honest playback capture disclosure) transitioning seamlessly to `ActiveSessionPage`.
+- `lib/pages/home_page/active_session_page.dart` — Live recording session screen (buffer length X badge, rolling fill bar, clip count, Save Now, Stop Session, Open Library).
 
 ### Tests (`test/`)
 - `test/data_models/recording_session_test.dart` — Unit tests for `RecordingSession`.
@@ -63,8 +69,11 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `test/services/preferences_service_test.dart` — Unit tests for `PreferencesService` with mock `SharedPreferences`.
 - `test/services/recorder_channel_test.dart` — Mocked `MethodChannel`/`EventChannel` tests for `RecorderChannel`.
 - `test/services/permission_service_test.dart` — `mocktail` tests for `PermissionService`.
+- `test/services/session_controller_test.dart` — Unit tests for `SessionController` lifecycle, clip persistence/dedup, consent cancellation rollback, and orphan reconciliation.
 - `test/pages/util/permission_gate_test.dart` — Widget tests for `PermissionGate` permission flow and lifecycle-resume refresh.
-- `test/widget_test.dart` — Widget test verifying `LearneseApp` bootstrap and theme setup.
+- `test/pages/home_page/buffer_length_picker_test.dart` — Widget tests for preset chips and custom 1–180s validation dialog.
+- `test/pages/home_page/home_and_active_session_test.dart` — End-to-end widget test for Home -> ActiveSession transitions, clip count updates, notification tap routing, and Stop Session.
+- `test/widget_test.dart` — Widget test verifying `LearneseApp` theme and navigation wiring.
 
 ## Chunk Status
 
@@ -72,6 +81,6 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - [x] **Chunk 2**: Database, Repositories & Storage
 - [x] **Chunk 3**: Native Recording Core
 - [x] **Chunk 4**: Overlay Button
-- [ ] **Chunk 5**: Home Flow & Active Session UI
+- [x] **Chunk 5**: Home Flow & Active Session UI
 - [ ] **Chunk 6**: Library, Rename, Folders & Playback
 - [ ] **Chunk 7**: App Icon, Polish & Release Readiness

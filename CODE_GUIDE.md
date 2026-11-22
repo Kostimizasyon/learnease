@@ -41,6 +41,13 @@ All timestamps (`started_at`, `ended_at`, `created_at`) are persisted as **Unix 
 - `Folder` (`folders`): `id`, `name`, `parent_id?` (self-FK with `ON DELETE CASCADE` for sub-folders; `FolderRepository.moveFolder()` guards against self/descendant cycles), `created_at`.
 - `RecordingState`: Wire model for `EventChannel` updates (`SessionStatus.idle | active`, `CaptureError`, `bufferFillFraction`).
 
+### UI Coordination (`SessionController`)
+- `lib/services/session_controller.dart` (`ChangeNotifier`) bridges `RecorderChannel`, `SessionRepository`, `StorageService`, `PreferencesService`, and `PermissionService`.
+- `HomePage` and `ActiveSessionPage` rebuild via `ListenableBuilder` with no third-party state framework.
+- Whenever Kotlin emits a `lastSavedClipPath` event (from tapping the floating overlay or calling `saveClipNow`), `SessionController` deduplicates by path (`_persistedClipPaths`) and persists a numbered `AudioClip` (`Clip 1`, `Clip 2`, ...) into SQLite under the active session.
+- If `MediaProjection` consent is cancelled, `SessionController.startSession()` rolls back the empty DB session row immediately.
+- Tapping the ongoing Android notification sets tab index `0` via `onNavigateToActiveSession` (both warm resume and cold launch via `consumeOpenActiveSession()`), landing directly on `ActiveSessionPage`.
+
 ### Storage Layout (`StorageService`)
 - Saved `.wav` clips live in app-specific documents storage under `clips/session_<sessionId>/clip_<epochMs>.wav` (with numeric collision suffix if multiple saves land in the same millisecond).
 - Dart passes the resolved session directory path to Kotlin when starting a session so both layers always write to and clean up the exact same directory (avoiding Android's `app_flutter/` vs `files/` mismatch).

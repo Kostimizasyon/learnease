@@ -83,3 +83,14 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 ### Alternatives Rejected
 - **Using a Flutter overlay engine plugin**: Rejected per spec to avoid a second Flutter engine's memory overhead and keep overlay lifetime locked to `RecordingService`.
 - **Generic `openAppSettings()` for overlay permission**: Rejected in favor of Android's direct `ACTION_MANAGE_OVERLAY_PERMISSION` deep link so users land directly on Learnese's overlay toggle.
+
+---
+
+## 2026-11-22 — Chunk 5: Home Flow & Active Session UI
+
+### Decisions Made
+- **Added `lib/services/session_controller.dart`**: Adjusted Section 5 layout by introducing a dedicated `ChangeNotifier` coordinator rather than burying SQLite + EventChannel orchestration inside widget `State` classes. Keeps UI widgets thin and allows deterministic unit tests (`session_controller_test.dart`) with `sqflite_common_ffi` + mocked `RecorderChannel`.
+- **Sequential event queue & clip deduplication**: `SessionController` serializes incoming `EventChannel` events through `_eventQueue` and tracks `_persistedClipPaths` so replayed state snapshots or dual MethodChannel/EventChannel callbacks never double-insert clips into SQLite.
+- **Consent rollback & orphan reconciliation**: Cancelling `MediaProjection` deletes the newly created empty DB session row so cancelled attempts never clutter the Library. On startup, if SQLite has an un-ended session while native reports `idle`, `initialize()` automatically closes it.
+- **Tab-driven Active Session routing**: `HomePage` renders `ActiveSessionPage` directly whenever `controller.isSessionActive` is true, so notification taps (`onOpenActiveSession` / `consumeOpenActiveSession`) simply switch the root `NavigationBar` to tab `0` with zero stale navigator stack edge cases.
+- **In-app honesty**: Added a concise disclosure card on `HomePage` explaining output-only capture, RAM-only buffer, continuous battery/RAM cost & Android indicator, and third-party app opt-outs / DRM silence.
