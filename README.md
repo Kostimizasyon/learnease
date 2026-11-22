@@ -4,7 +4,7 @@
 
 ## Features
 
-- **Rolling in-memory audio buffer**: Choose 1–180s (presets 15s / 30s / 60s / 120s + custom), fixed for the session with no auto-stop or session timer.
+- **Rolling in-memory audio buffer**: Choose 1–180s (presets 15s / 30s / 60s / 120s + custom), fixed for the session with no auto-stop or session timer. Saving a clip atomically clears the buffer back to `0s` so the next clip starts fresh with no overlap.
 - **Audio output only**: Captures internal playback (`USAGE_MEDIA`, `USAGE_GAME`, `USAGE_UNKNOWN`) via `AudioPlaybackCaptureConfiguration` — never the microphone.
 - **Draggable floating overlay button**: 52dp semi-transparent bubble with a pulsing live indicator, animated edge snapping, debounced tap-to-save with teal check flash, and drag-to-X dismiss (which ends the session).
 - **Persistent session notification**: Shows buffer length `X` and saved clip count, opens the Active Session screen on tap, and includes a **Stop Session** action.

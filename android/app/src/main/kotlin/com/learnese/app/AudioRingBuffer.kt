@@ -105,6 +105,19 @@ class AudioRingBuffer(val capacityBytes: Int) {
     @Synchronized
     fun bufferedBytes(): Int = filledBytes
 
+    /**
+     * Atomically captures a chronological snapshot and clears the ring buffer so the
+     * next recording window starts fresh from 0 bytes with no overlap or lost frames.
+     */
+    @Synchronized
+    fun snapshotAndClear(): ByteArray {
+        val data = snapshot()
+        if (data.isNotEmpty()) {
+            clear()
+        }
+        return data
+    }
+
     @Synchronized
     fun clear() {
         buffer.fill(0)

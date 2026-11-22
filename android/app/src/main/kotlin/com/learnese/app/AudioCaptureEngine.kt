@@ -37,6 +37,7 @@ class AudioCaptureEngine(
     private var captureThread: Thread? = null
     private var outputDirectory: File? = null
     private var saveExecutor: ExecutorService? = null
+    private var bufferedUpdateCallback: ((bufferedMs: Long) -> Unit)? = null
 
     @SuppressLint("MissingPermission")
     fun start(
@@ -99,6 +100,7 @@ class AudioCaptureEngine(
         ringBuffer = buffer
         audioRecord = recorder
         outputDirectory = outputDir
+        bufferedUpdateCallback = onBufferedUpdate
         saveExecutor = Executors.newSingleThreadExecutor { runnable ->
             Thread(runnable, "LearneseWavWriter").apply { isDaemon = true }
         }
@@ -170,7 +172,7 @@ class AudioCaptureEngine(
         }
 
         val pcmSnapshot = try {
-            buffer.snapshot()
+            buffer.snapshotAndClear()
         } catch (oom: OutOfMemoryError) {
             onComplete(
                 Result.failure(
@@ -186,6 +188,9 @@ class AudioCaptureEngine(
             onComplete(Result.failure(IllegalStateException("No audio buffered yet.")))
             return
         }
+
+        // Immediately reflect the cleared buffer (0ms) so UI resets while WAV writes asynchronously.
+        bufferedUpdateCallback?.invoke(0L)
 
         val durationMs = format.durationMsForBytes(pcmSnapshot.size.toLong())
         val saveTimestampMs = System.currentTimeMillis()
@@ -250,6 +255,7 @@ class AudioCaptureEngine(
 
         ringBuffer?.clear()
         ringBuffer = null
+        bufferedUpdateCallback = null
 
         val executor = saveExecutor
         saveExecutor = null

@@ -197,7 +197,8 @@ class AudioRingBufferTest {
 
         for (i in 1..4) {
             ring.write(byteArrayOf(i.toByte(), (i + 10).toByte(), (i + 20).toByte(), (i + 30).toByte()))
-            val pcm = ring.snapshot()
+            val pcm = ring.snapshotAndClear()
+            assertEquals(0, ring.bufferedBytes())
             val file = ClipFileNamer.nextFile(dir, 1700000000000L)
             WavWriter.writePcmToWav(pcm, file, AudioFormatSpec.DEFAULT)
             written.add(file)
@@ -205,6 +206,24 @@ class AudioRingBufferTest {
 
         assertEquals(4, written.map { it.name }.toSet().size)
         assertEquals(44 + 4, written[0].length().toInt())
-        assertEquals(44 + 16, written[3].length().toInt())
+        assertEquals(44 + 4, written[3].length().toInt())
+    }
+
+    @Test
+    fun snapshotAndClearResetsWrappedBufferSoNextSaveStartsFromZero() {
+        val ring = AudioRingBuffer(capacityBytes = 5)
+        ring.write(byteArrayOf(1, 2, 3, 4))
+        ring.write(byteArrayOf(5, 6, 7))
+
+        val first = ring.snapshotAndClear()
+        assertArrayEquals(byteArrayOf(3, 4, 5, 6, 7), first)
+        assertEquals(0, ring.bufferedBytes())
+        assertEquals(0, ring.snapshot().size)
+
+        // Subsequent audio starts completely fresh from 0 with no overlap.
+        ring.write(byteArrayOf(90, 91))
+        assertEquals(2, ring.bufferedBytes())
+        assertArrayEquals(byteArrayOf(90, 91), ring.snapshotAndClear())
+        assertEquals(0, ring.bufferedBytes())
     }
 }

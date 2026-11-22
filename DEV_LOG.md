@@ -123,3 +123,11 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 ### Decisions Made
 - **Folder-scoped playlist (`LibraryController.currentFolderPlayableClips`)**: Flattens clips only across `sessions` belonging to `_currentFolderId` (excluding parent, sibling, and sub-folder clips). Passed into `PlayerSheet` so Previous/Next buttons never cross folder boundaries.
 - **Resilient track switching**: `PlayerSheet._selectIndex` increments `_loadEpoch` to ignore stale async `setFilePath` completions and keeps Previous/Next buttons available on error cards so a missing file never traps navigation.
+
+---
+
+## 2026-11-22 — Clear Rolling Buffer on Every Clip Save
+
+### Decisions Made
+- **Atomic `AudioRingBuffer.snapshotAndClear()`**: Replaced `buffer.snapshot()` in `AudioCaptureEngine.saveClip()` with a synchronized `snapshotAndClear()` so extracting PCM and resetting/zeroing the ring buffer happen under one lock (no dropped frames between snapshot and clear, and zero audio overlap across consecutive saved clips).
+- **Immediate UI reset**: `AudioCaptureEngine.saveClip()` invokes `bufferedUpdateCallback(0L)` right after clearing so `ActiveSessionPage`'s buffer progress indicator resets to `0s` immediately while `.wav` writing runs asynchronously.
