@@ -37,7 +37,7 @@ class LearneseApp extends StatefulWidget {
   State<LearneseApp> createState() => _LearneseAppState();
 }
 
-class _LearneseAppState extends State<LearneseApp> {
+class _LearneseAppState extends State<LearneseApp> with WidgetsBindingObserver {
   late final SessionController _sessionController;
   LibraryController? _libraryController;
   late final bool _ownsSessionController;
@@ -49,6 +49,7 @@ class _LearneseAppState extends State<LearneseApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final providedSession = widget.sessionController;
     final providedLibrary = widget.libraryController;
 
@@ -108,7 +109,18 @@ class _LearneseAppState extends State<LearneseApp> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _sessionController.syncWithNative();
+      if (_currentTab == 1) {
+        _libraryController?.load();
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     if (_ownsLibraryController) {
       _libraryController?.dispose();
     }

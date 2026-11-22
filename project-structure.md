@@ -6,8 +6,9 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 
 ## File Breakdown
 
-### Root & Documentation
-- `pubspec.yaml` — Package manifest, dependencies (`sqflite`, `path`, `path_provider`, `shared_preferences`, `permission_handler`, `just_audio`), and dev/test tools (`sqflite_common_ffi`, `mocktail`, `flutter_launcher_icons`, `flutter_lints`).
+### Root, Assets & Documentation
+- `pubspec.yaml` — Package manifest, dependencies (`sqflite`, `path`, `path_provider`, `shared_preferences`, `permission_handler`, `just_audio`), dev/test tools (`sqflite_common_ffi`, `mocktail`, `flutter_launcher_icons`, `flutter_lints`), and adaptive icon config.
+- `assets/icon/` — Original Learnese icon master (`learnese_icon.svg`) and 1024×1024 PNG sources (`icon_full.png`, `icon_foreground.png`, `icon_monochrome.png`) wired to `flutter_launcher_icons`.
 - `analysis_options.yaml` — Strict Dart analyzer settings (`strict-casts`, `strict-inference`, `strict-raw-types`) and `flutter_lints` rules.
 - `.gitignore` — Excludes Flutter/Android build outputs, IDE files, `.env`, and signing keystores.
 - `README.md` — Product overview, requirements, build/test commands, permissions, and Android platform limitations.
@@ -93,4 +94,4 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - [x] **Chunk 4**: Overlay Button
 - [x] **Chunk 5**: Home Flow & Active Session UI
 - [x] **Chunk 6**: Library, Rename, Folders & Playback
-- [ ] **Chunk 7**: App Icon, Polish & Release Readiness
+- [x] **Chunk 7**: App Icon, Polish & Release Readiness

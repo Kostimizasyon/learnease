@@ -192,12 +192,25 @@ class _LibraryPageState extends State<LibraryPage> {
                     child: Card(
                       color: colors.errorContainer,
                       child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(
-                          ctrl.errorMessage!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onErrorContainer,
-                          ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: <Widget>[
+                            Expanded(
+                              child: Text(
+                                ctrl.errorMessage!,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colors.onErrorContainer,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: ctrl.load,
+                              child: const Text('Retry'),
+                            ),
+                          ],
                         ),
                       ),
                     ),

@@ -227,7 +227,12 @@ class MainActivity : FlutterActivity() {
                     ),
                 )
             }.onFailure { err ->
-                result.error("encoding_failed", err.message ?: "Failed to save clip.", null)
+                val code = if (err is InsufficientStorageException) {
+                    "storage_error"
+                } else {
+                    "encoding_failed"
+                }
+                result.error(code, err.message ?: "Failed to save clip.", null)
             }
         }
     }

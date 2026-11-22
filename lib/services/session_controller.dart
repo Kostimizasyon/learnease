@@ -253,6 +253,40 @@ class SessionController extends ChangeNotifier {
     _notifySafe();
   }
 
+  /// Re-syncs Flutter state with native RecordingService (e.g. on app resume after OS kills service).
+  Future<void> syncWithNative() async {
+    if (!_initialized || _isBusy) return;
+    try {
+      final nativeState = await _recorderChannel.getState();
+      final wasActive = isSessionActive;
+      _recordingState = nativeState;
+
+      if (nativeState.hasSavedClip) {
+        final path = nativeState.lastSavedClipPath!;
+        final durationMs =
+            nativeState.lastSavedClipDurationMs ?? nativeState.bufferedMs;
+        final sizeBytes =
+            nativeState.lastSavedClipSizeBytes ??
+            await _storageService.fileSizeBytes(path);
+        await _persistClipIfNew(
+          filePath: path,
+          durationMs: durationMs,
+          sizeBytes: sizeBytes,
+        );
+      }
+
+      if (nativeState.isIdle && wasActive) {
+        await _finalizeActiveSessionInDb();
+        _statusMessage = nativeState.hasError
+            ? _friendlyErrorMessage(nativeState)
+            : 'Recording session ended in the background.';
+      }
+      _notifySafe();
+    } catch (_) {
+      // Native channel may be unavailable during tests.
+    }
+  }
+
   void _enqueueEvent(RecordingState state) {
     _eventQueue = _eventQueue
         .then((_) => _handleStateEvent(state))

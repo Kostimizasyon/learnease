@@ -104,3 +104,14 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 - **`ClipAudioPlayer` abstraction for `just_audio`**: `PlayerSheet` delegates to `JustAudioClipPlayer` by default and accepts an optional `ClipPlayerFactory` so widget tests verify play/pause, seek/skip, and missing-file errors without requiring Android ExoPlayer.
 - **`FolderMoveSelection` wrapper in `AppDialog.pickFolder`**: Distinguishes selecting "Library (Root)" (`FolderMoveSelection.root()`) from cancelling the dialog (`null`) cleanly without sentinel integers.
 - **Stateful text-input dialogs**: `_TextInputDialog` owns and disposes its `TextEditingController` in `State.dispose()` so closing dialogs never hits Flutter's exit-animation controller-disposed race.
+
+---
+
+## 2026-11-22 — Chunk 7: App Icon, Polish & Release Readiness
+
+### Decisions Made
+- **Original Learnese icon (`assets/icon/`)**: Designed a crisp circular counter-clockwise instant-replay arrow enclosing three centered audio waveform bars on the Deep Teal (`#0F766E`) primary surface (`#FFFFFF` arc/center bar, `#CCFBF1` side bars). Generated vector source (`learnese_icon.svg`) and 2x2 supersampled 1024×1024 PNGs (`icon_full.png`, `icon_foreground.png`, `icon_monochrome.png`), wired through `flutter_launcher_icons` to produce Android adaptive icons (`mipmap-anydpi-v26/ic_launcher.xml` with background, foreground, and Android 13+ monochrome layers) and legacy mipmaps.
+- **Low-storage & OOM resilience**: Added `InsufficientStorageException` and `WavWriter.hasEnoughStorage()` (requiring header + PCM + 1 MiB safety margin) mapped to `CaptureError.storageError`, plus `OutOfMemoryError` guards around `AudioRingBuffer` allocation and snapshot copy in `AudioCaptureEngine`.
+- **Mid-session revocation & OS kill recovery**: `RecordingService` verifies `Settings.canDrawOverlays` on periodic progress ticks and checks `RECORD_AUDIO` on fatal `AudioRecord` read failures to report exact revocation errors. `LearneseApp` mixes in `WidgetsBindingObserver` and calls `SessionController.syncWithNative()` on `AppLifecycleState.resumed` to reconcile sessions if Android kills the foreground service in the background.
+- **UI polish**: Added `"Waiting for device audio output…"` state on `ActiveSessionPage` while buffer is at `0ms`, and added a **Retry** button on `LibraryPage` error banners.
+- **Manual QA checklist**: Documented an end-to-end physical-device QA checklist in `README.md`.

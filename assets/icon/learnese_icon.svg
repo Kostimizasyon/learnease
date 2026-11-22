@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Learnese App Icon: Deep Teal rounded container with instant-replay arc and 3 audio waveform bars -->
+  <rect width="1024" height="1024" rx="224" fill="#0F766E" />
+  <g fill="none" stroke="#FFFFFF" stroke-width="58" stroke-linecap="round">
+    <!-- Counter-clockwise instant-replay circular arc (radius 252, centered at 512,512) -->
+    <path d="M 334 334 A 252 252 0 1 1 268 576" />
+  </g>
+  <!-- Arrowhead at top-left of replay arc -->
+  <polygon points="274,232 418,314 278,396" fill="#FFFFFF" />
+  <!-- Three centered audio waveform bars -->
+  <rect x="394" y="452" width="52" height="120" rx="26" fill="#CCFBF1" />
+  <rect x="486" y="382" width="52" height="260" rx="26" fill="#FFFFFF" />
+  <rect x="578" y="432" width="52" height="160" rx="26" fill="#CCFBF1" />
+</svg>

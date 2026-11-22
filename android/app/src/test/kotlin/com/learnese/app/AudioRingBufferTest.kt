@@ -177,4 +177,34 @@ class AudioRingBufferTest {
         val second = ClipFileNamer.nextFile(dir, 5555L)
         assertEquals("clip_5555_1.wav", second.name)
     }
+
+    @Test
+    fun wavWriterStorageHeadroomCheckGuardsLowStorage() {
+        val pcmSize = 88_200 // 1 second mono
+        val required = WavWriter.HEADER_SIZE_BYTES + pcmSize +
+            WavWriter.DEFAULT_STORAGE_SAFETY_MARGIN_BYTES
+
+        assertFalse(WavWriter.hasEnoughStorage(required - 1L, pcmSize))
+        assertTrue(WavWriter.hasEnoughStorage(required, pcmSize))
+        assertTrue(WavWriter.hasEnoughStorage(required + 10_000L, pcmSize))
+    }
+
+    @Test
+    fun rapidRepeatedSnapshotsWriteDistinctValidWavFiles() {
+        val ring = AudioRingBuffer(capacityBytes = 16)
+        val dir = tempFolder.newFolder("rapid")
+        val written = mutableListOf<File>()
+
+        for (i in 1..4) {
+            ring.write(byteArrayOf(i.toByte(), (i + 10).toByte(), (i + 20).toByte(), (i + 30).toByte()))
+            val pcm = ring.snapshot()
+            val file = ClipFileNamer.nextFile(dir, 1700000000000L)
+            WavWriter.writePcmToWav(pcm, file, AudioFormatSpec.DEFAULT)
+            written.add(file)
+        }
+
+        assertEquals(4, written.map { it.name }.toSet().size)
+        assertEquals(44 + 4, written[0].length().toInt())
+        assertEquals(44 + 16, written[3].length().toInt())
+    }
 }

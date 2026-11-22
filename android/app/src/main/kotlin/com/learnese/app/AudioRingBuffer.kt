@@ -113,11 +113,23 @@ class AudioRingBuffer(val capacityBytes: Int) {
     }
 }
 
+class InsufficientStorageException(message: String) : IOException(message)
+
 /**
  * Writes standard 44-byte RIFF/WAVE PCM headers and atomically flushes .wav files.
  */
 object WavWriter {
     const val HEADER_SIZE_BYTES = 44
+    const val DEFAULT_STORAGE_SAFETY_MARGIN_BYTES = 1_048_576L // 1 MiB headroom
+
+    fun hasEnoughStorage(
+        usableBytes: Long,
+        pcmDataSizeBytes: Int,
+        safetyMarginBytes: Long = DEFAULT_STORAGE_SAFETY_MARGIN_BYTES,
+    ): Boolean {
+        val required = HEADER_SIZE_BYTES.toLong() + pcmDataSizeBytes.toLong() + safetyMarginBytes
+        return usableBytes >= required
+    }
 
     fun buildHeader(
         pcmDataSizeBytes: Int,
@@ -168,6 +180,12 @@ object WavWriter {
         destination.parentFile?.let { parent ->
             if (!parent.exists() && !parent.mkdirs()) {
                 throw IOException("Failed to create clip directory: ${parent.absolutePath}")
+            }
+            val usable = parent.usableSpace
+            if (usable > 0L && !hasEnoughStorage(usable, pcmData.size)) {
+                throw InsufficientStorageException(
+                    "Not enough free storage space to save clip.",
+                )
             }
         }
 

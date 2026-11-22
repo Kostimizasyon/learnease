@@ -204,5 +204,92 @@ void main() {
         expect((await sessionRepo.getSession(sessionId))?.isActive, isFalse);
       },
     );
+
+    test('handles rapid saves, early partial-fill clip, and overlay dismiss mid-save without losing clips', () async {
+      await controller.initialize();
+      await controller.setBufferSeconds(60);
+      when(
+        () => recorderChannel.startSession(
+          bufferSeconds: 60,
+          outputDir: any(named: 'outputDir'),
+        ),
+      ).thenAnswer((_) async => true);
+
+      await controller.startSession();
+      final sessionId = controller.activeSession!.id!;
+
+      // 3 rapid saves (including early partial-fill 3.2s < 60s), followed immediately by idle.
+      stateStreamController.add(
+        const RecordingState.active(
+          bufferedMs: 3200,
+          bufferSeconds: 60,
+          lastSavedClipPath: '/clips/rapid_1.wav',
+          lastSavedClipDurationMs: 3200,
+          lastSavedClipSizeBytes: 282284,
+        ),
+      );
+      stateStreamController.add(
+        const RecordingState.active(
+          bufferedMs: 3500,
+          bufferSeconds: 60,
+          lastSavedClipPath: '/clips/rapid_2.wav',
+          lastSavedClipDurationMs: 3500,
+          lastSavedClipSizeBytes: 308744,
+        ),
+      );
+      stateStreamController.add(
+        const RecordingState.active(
+          bufferedMs: 3900,
+          bufferSeconds: 60,
+          lastSavedClipPath: '/clips/rapid_3.wav',
+          lastSavedClipDurationMs: 3900,
+          lastSavedClipSizeBytes: 344024,
+        ),
+      );
+      stateStreamController.add(const RecordingState.idle());
+      await pumpEventQueue();
+
+      expect(controller.isSessionActive, isFalse);
+      final ended = await sessionRepo.getSession(sessionId);
+      expect(ended?.isActive, isFalse);
+
+      final clips = await sessionRepo.listClipsForSession(sessionId);
+      expect(clips.map((c) => c.name), <String>['Clip 1', 'Clip 2', 'Clip 3']);
+      expect(clips[0].durationMs, 3200);
+    });
+
+    test('syncWithNative reconciles service killed in background and surfaces storage errors', () async {
+      await controller.initialize();
+      when(
+        () => recorderChannel.startSession(
+          bufferSeconds: any(named: 'bufferSeconds'),
+          outputDir: any(named: 'outputDir'),
+        ),
+      ).thenAnswer((_) async => true);
+
+      await controller.startSession();
+      final sessionId = controller.activeSession!.id!;
+
+      stateStreamController.add(
+        const RecordingState(
+          sessionState: SessionStatus.active,
+          bufferedMs: 8000,
+          bufferSeconds: 30,
+          error: CaptureError.storageError,
+        ),
+      );
+      await pumpEventQueue();
+      expect(controller.isSessionActive, isTrue);
+      expect(controller.statusMessage, contains('storage'));
+
+      // Simulate Android killing RecordingService while app was backgrounded.
+      when(() => recorderChannel.getState())
+          .thenAnswer((_) async => const RecordingState.idle());
+      await controller.syncWithNative();
+
+      expect(controller.isSessionActive, isFalse);
+      expect(controller.statusMessage, contains('ended in the background'));
+      expect((await sessionRepo.getSession(sessionId))?.isActive, isFalse);
+    });
   });
 }

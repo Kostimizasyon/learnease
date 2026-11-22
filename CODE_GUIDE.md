@@ -64,11 +64,14 @@ All timestamps (`started_at`, `ended_at`, `created_at`) are persisted as **Unix 
 - `AppTheme.light()` and `AppTheme.dark()` configure Material 3 with a deep teal primary, neutral near-white / near-black surfaces, and a red accent exposed via the `AppRecordingColors` `ThemeExtension` reserved strictly for active recording state and destructive/dismiss actions.
 - Native overlay and notification colors live in `android/app/src/main/res/values/colors.xml` and mirror `AppColors`.
 
-## Key Gotchas
+## Key Gotchas & Edge-Case Hardening
 
-- **Android 14+ single-use projection tokens**: `MediaProjection` cannot be reused after a session stops; `MainActivity` must request fresh user consent for every new session.
+- **Android 14+ single-use projection tokens**: `MediaProjection` cannot be reused after a session stops; `MainActivity` always requests fresh user consent per session, and `RecordingService` calls `ServiceCompat.startForeground(..., FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)` before `getMediaProjection()`.
 - **App opt-outs & DRM**: Apps setting `allowAudioPlaybackCapture="false"` or playing DRM streams output silence by OS design.
-- **Overlay lifetime = Session lifetime**: Dismissing the overlay must always terminate the session; there is no hidden background capture mode.
+- **Overlay lifetime = Session lifetime**: Dismissing the overlay (or revoking `SYSTEM_ALERT_WINDOW` mid-session) immediately stops the session via `RecordingService.stopSessionInternal()`.
+- **Low storage & memory pressure**: `WavWriter` checks directory `usableSpace` with a 1 MiB headroom margin before writing and throws `InsufficientStorageException` (`storage_error`) rather than producing truncated files. `AudioCaptureEngine` guards `AudioRingBuffer` allocation and snapshotting against `OutOfMemoryError`.
+- **Service killed while backgrounded**: `LearneseApp` observes `AppLifecycleState.resumed` and calls `SessionController.syncWithNative()` so if Android terminates `RecordingService` under memory pressure, the UI reconciles back to idle and closes the SQLite session row cleanly.
+- **Stop while encoding**: `AudioCaptureEngine.stopAndFlush()` stops capture and wipes RAM immediately, then awaits `saveExecutor` termination on a background thread so any in-flight `.wav` write finishes and emits its clip event before `idle` is published.
 
 ## Extending the Codebase
 

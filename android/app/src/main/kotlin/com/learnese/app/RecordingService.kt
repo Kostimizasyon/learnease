@@ -1,9 +1,11 @@
 package com.learnese.app
 
+import android.Manifest
 import android.app.Activity
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.media.projection.MediaProjection
@@ -14,6 +16,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import io.flutter.plugin.common.EventChannel
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -213,6 +216,13 @@ class RecordingService : Service() {
                 outputDir = outputDir,
                 onBufferedUpdate = { bufferedMs ->
                     if (isSessionActive && !stopping.get()) {
+                        if (!Settings.canDrawOverlays(this)) {
+                            stopSessionInternal(
+                                error = "overlay_permission_denied",
+                                errorMessage = "Display over other apps permission was revoked.",
+                            )
+                            return@start
+                        }
                         RecordingSessionBus.publish(
                             RecordingSessionBus.activePayload(
                                 bufferedMs = bufferedMs,
@@ -222,7 +232,18 @@ class RecordingService : Service() {
                     }
                 },
                 onFatalError = { errorCode, message ->
-                    stopSessionInternal(error = errorCode, errorMessage = message)
+                    val hasAudioPerm = ContextCompat.checkSelfPermission(
+                        this,
+                        Manifest.permission.RECORD_AUDIO,
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (!hasAudioPerm) {
+                        stopSessionInternal(
+                            error = "permission_denied",
+                            errorMessage = "Audio capture permission was revoked.",
+                        )
+                    } else {
+                        stopSessionInternal(error = errorCode, errorMessage = message)
+                    }
                 },
             )
         } catch (t: Throwable) {
@@ -295,11 +316,16 @@ class RecordingService : Service() {
                         ),
                     )
                 }.onFailure { err ->
+                    val errorCode = if (err is InsufficientStorageException) {
+                        "storage_error"
+                    } else {
+                        "encoding_failed"
+                    }
                     RecordingSessionBus.publish(
                         RecordingSessionBus.activePayload(
                             bufferedMs = engine.currentBufferedMs(),
                             bufferSeconds = bufferSeconds,
-                            error = "encoding_failed",
+                            error = errorCode,
                             errorMessage = err.message ?: "Failed to write WAV clip.",
                         ),
                     )

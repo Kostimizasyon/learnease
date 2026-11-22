@@ -47,7 +47,14 @@ class AudioCaptureEngine(
         onFatalError: (errorCode: String, message: String) -> Unit,
     ) {
         val capacityBytes = format.capacityBytesForSeconds(bufferSeconds)
-        val buffer = AudioRingBuffer(capacityBytes)
+        val buffer = try {
+            AudioRingBuffer(capacityBytes)
+        } catch (oom: OutOfMemoryError) {
+            throw IllegalStateException(
+                "Not enough memory to allocate a ${bufferSeconds}s buffer. Try a shorter buffer length.",
+                oom,
+            )
+        }
 
         // Capture internal playback audio only; microphone input is never requested.
         val captureConfig = AudioPlaybackCaptureConfiguration.Builder(mediaProjection)
@@ -162,7 +169,19 @@ class AudioCaptureEngine(
             return
         }
 
-        val pcmSnapshot = buffer.snapshot()
+        val pcmSnapshot = try {
+            buffer.snapshot()
+        } catch (oom: OutOfMemoryError) {
+            onComplete(
+                Result.failure(
+                    IllegalStateException(
+                        "Low memory while snapshotting buffer. Try a shorter buffer length.",
+                        oom,
+                    ),
+                ),
+            )
+            return
+        }
         if (pcmSnapshot.isEmpty()) {
             onComplete(Result.failure(IllegalStateException("No audio buffered yet.")))
             return

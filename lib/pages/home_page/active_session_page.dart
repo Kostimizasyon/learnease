@@ -149,6 +149,15 @@ class ActiveSessionPage extends StatelessWidget {
                             minHeight: 8,
                           ),
                         ),
+                        if (state.bufferedMs == 0) ...<Widget>[
+                          const SizedBox(height: 6),
+                          Text(
+                            'Waiting for device audio output…',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         const Divider(),
                         const SizedBox(height: 14),
