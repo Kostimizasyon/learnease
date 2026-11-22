@@ -31,3 +31,17 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 ### Open Questions (Resolved)
 1. **Output format**: Locked in **44.1 kHz 16-bit mono `.wav`** (44-byte RIFF header + raw PCM) instead of AAC `.m4a` (`MediaCodec`/`MediaMuxer`). Reasoning: near-instant saves, zero OEM `MediaCodec` quirks, lossless quality for language/study tooling, and pure-Kotlin unit-testability. Storage cost (~86.1 KiB/s, ~2.52 MiB per 30s) is acceptable.
 2. **Channel count**: **Mono (1 channel)** confirmed (~15.14 MiB max ring buffer at 180s).
+
+---
+
+## 2026-11-22 — Chunk 2: Database, Repositories & Storage
+
+### Decisions Made
+- **Folder deletion cascade policy**: Configured `folders.parent_id` with `ON DELETE CASCADE` (deleting a folder deletes its sub-folders) and `sessions.folder_id` with `ON DELETE SET NULL` (sessions inside deleted folders return to root instead of silently losing user audio recordings). Enabled `PRAGMA foreign_keys = ON` in `DatabaseHelper._onConfigure`.
+- **Cycle prevention in `FolderRepository.moveFolder`**: Walks `getBreadcrumbs(newParentId)` before updating `parent_id` to reject moving a folder into itself or any descendant.
+- **Testability without platform channels**: `DatabaseHelper` accepts an injectable `DatabaseFactory` + `dbPath` (`sqflite_common_ffi` + `inMemoryDatabasePath` in tests), and `StorageService` accepts an injectable `rootDirectoryProvider` (`Directory.systemTemp` in tests).
+- **Clip file layout**: `clips/session_<sessionId>/clip_<epochMs>.wav` with millisecond collision suffixing so rapid repeated saves never overwrite each other.
+
+### Alternatives Rejected
+- **`ON DELETE CASCADE` on `sessions.folder_id`**: Rejected because accidentally deleting an organization folder should not destroy recorded audio sessions and `.wav` files; `SET NULL` is safer and reversible.
+- **Singleton-only `DatabaseHelper`**: Rejected in favor of an injectable constructor so `sqflite_common_ffi` tests stay isolated in memory.

@@ -33,10 +33,14 @@ Learnese separates concerns across three thin layers with no heavy state-managem
 
 All timestamps (`started_at`, `ended_at`, `created_at`) are persisted as **Unix epoch milliseconds (`INTEGER`)** for fast, unambiguous SQLite sorting and exact round-trip equality (`DateTime.fromMillisecondsSinceEpoch`). Models omit `id` from `toMap()` when `id == null` so SQLite `AUTOINCREMENT` assigns primary keys cleanly.
 
-- `RecordingSession` (`sessions`): `id`, `name`, `started_at`, `ended_at?`, `buffer_seconds`, `folder_id?`.
-- `AudioClip` (`clips`): `id`, `session_id` (FK cascade delete), `name`, `file_path`, `duration_ms`, `size_bytes`, `created_at`.
-- `Folder` (`folders`): `id`, `name`, `parent_id?` (self-FK), `created_at`.
+- `RecordingSession` (`sessions`): `id`, `name`, `started_at`, `ended_at?`, `buffer_seconds`, `folder_id?` (`ON DELETE SET NULL` when a folder is deleted so recorded sessions are preserved at root instead of lost).
+- `AudioClip` (`clips`): `id`, `session_id` (`ON DELETE CASCADE`), `name`, `file_path`, `duration_ms`, `size_bytes`, `created_at`.
+- `Folder` (`folders`): `id`, `name`, `parent_id?` (self-FK with `ON DELETE CASCADE` for sub-folders; `FolderRepository.moveFolder()` guards against self/descendant cycles), `created_at`.
 - `RecordingState`: Wire model for `EventChannel` updates (`SessionStatus.idle | active`, `CaptureError`, `bufferFillFraction`).
+
+### Storage Layout (`StorageService`)
+- Saved `.wav` clips live in app-specific documents storage under `clips/session_<sessionId>/clip_<epochMs>.wav` (with numeric collision suffix if multiple saves land in the same millisecond).
+- `SessionRepository.deleteClip()` and `SessionRepository.deleteSession()` delete both the SQLite rows and the corresponding `.wav` files/session directory via `StorageService`.
 
 ## Theme & Color System
 

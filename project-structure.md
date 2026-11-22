@@ -29,6 +29,11 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `lib/data_models/audio_clip.dart` — `AudioClip` entity (`clips` table), default naming (`Clip N`), and serialization.
 - `lib/data_models/folder.dart` — `Folder` entity (`folders` table) with `Folder.root()` / `Folder.nested()` named constructors and serialization.
 - `lib/data_models/recording_state.dart` — `SessionStatus`, `CaptureError`, and `RecordingState` EventChannel payload model.
+- `lib/services/database_helper.dart` — SQLite lifecycle, `PRAGMA foreign_keys = ON`, versioned migrations, and schema/indexes for `folders`, `sessions`, and `clips`.
+- `lib/services/session_repository.dart` — CRUD for `RecordingSession` and `AudioClip`, newest-first session queries, and disk file cleanup on delete.
+- `lib/services/folder_repository.dart` — CRUD for `Folder`, alphabetical listing, breadcrumb ancestor resolution, and cycle-safe folder moves.
+- `lib/services/storage_service.dart` — App-specific `.wav` clip paths (`clips/session_<id>/clip_<ts>.wav`), size queries, and file/directory deletion.
+- `lib/services/preferences_service.dart` — `SharedPreferences` wrapper for last buffer length (`1..180s`) and onboarding hint flags.
 
 ### Tests (`test/`)
 - `test/data_models/recording_session_test.dart` — Unit tests for `RecordingSession`.
@@ -36,12 +41,17 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `test/data_models/folder_test.dart` — Unit tests for `Folder`.
 - `test/data_models/recording_state_test.dart` — Unit tests for `RecordingState` and wire parsing.
 - `test/theme/app_theme_test.dart` — Unit tests for light/dark themes and `AppRecordingColors`.
+- `test/services/database_helper_test.dart` — `sqflite_common_ffi` tests for schema creation, foreign keys, and reopen lifecycle.
+- `test/services/session_repository_test.dart` — `sqflite_common_ffi` tests for session/clip CRUD, cascade deletes, and `.wav` file cleanup.
+- `test/services/folder_repository_test.dart` — `sqflite_common_ffi` tests for nested folders, breadcrumbs, cycle prevention, and cascade rules.
+- `test/services/storage_service_test.dart` — Unit tests for unique clip paths, file sizes, and directory cleanup.
+- `test/services/preferences_service_test.dart` — Unit tests for `PreferencesService` with mock `SharedPreferences`.
 - `test/widget_test.dart` — Widget test verifying `LearneseApp` bootstrap and theme setup.
 
 ## Chunk Status
 
 - [x] **Chunk 1**: Repo, Project Setup, Theme, Models & Docs
-- [ ] **Chunk 2**: Database, Repositories & Storage
+- [x] **Chunk 2**: Database, Repositories & Storage
 - [ ] **Chunk 3**: Native Recording Core
 - [ ] **Chunk 4**: Overlay Button
 - [ ] **Chunk 5**: Home Flow & Active Session UI
