@@ -51,3 +51,21 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 - Added `ArgumentError` guards for conflicting `rootOnly: true` + `folderId`/`parentId` filters, empty-path guard in `StorageService.fileSizeBytes()`, and `PathNotFoundException` handling on file/directory deletes.
 - Expanded `sqflite_common_ffi` tests to verify concurrent DB open, CHECK/FK violations, 3-level folder cascade deletes, `newestFirst` clip ordering, direct session directory removal, and lower-bound preference clamping.
 - Noted for Chunk 3: pass Dart's `StorageService.getSessionDirectory(sessionId)` path to Kotlin on `startSession` so Kotlin writes clips into the exact same directory Dart manages (`app_flutter/clips/...` vs `files/`).
+
+---
+
+## 2026-11-22 — Chunk 3: Native Recording Core
+
+### Decisions Made
+- **Pure Kotlin extraction (`AudioRingBuffer.kt`)**: Adjusted Section 5 layout slightly by placing pure JVM classes (`AudioFormatSpec`, `AudioRingBuffer`, `WavWriter`, `ClipFileNamer`) in their own file `AudioRingBuffer.kt` with zero Android imports so Gradle JUnit tests verify wrap-around ordering, partial-fill snapshots, 44-byte RIFF/WAVE headers, and collision-safe clip naming without Android mocks.
+- **Android 14+ foreground service ordering**: `RecordingService.handleStartSession` calls `ServiceCompat.startForeground(..., FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)` *before* `MediaProjectionManager.getMediaProjection()` and registers a `MediaProjection.Callback` *before* starting `AudioRecord`, avoiding Android 14+ `SecurityException` / `IllegalStateException` crashes and handling system revocation (`projection_revoked`).
+- **Atomic `.wav` writes & stop-flush semantics**: `WavWriter.writePcmToWav` writes to a sibling `.tmp` file, calls `fd.sync()`, and atomically renames to `.wav`. On `stopSession()`, `AudioCaptureEngine.stopAndFlush` immediately halts capture and zeroes the RAM ring buffer, then shuts down and awaits `saveExecutor` termination on a background thread so any save already in flight finishes and flushes before the service terminates.
+- **Channel & permission testability**: `RecorderChannel` accepts injectable `MethodChannel`/`EventChannel` instances; `PermissionService` delegates through an injectable `PermissionGateway` interface so all permission states can be unit-tested via `mocktail`.
+
+### Alternatives Rejected
+- **Using `ActivityResultContracts` in `MainActivity`**: Standard `FlutterActivity` extends `android.app.Activity` (not `ComponentActivity`), so `onActivityResult` is used cleanly without forcing `FlutterFragmentActivity`.
+- **Reusing `MediaProjection` across sessions**: Disallowed on Android 14+; `MainActivity` always launches fresh consent per session.
+
+### Problems Hit (Chunk 3)
+- `permission_handler_android` (`14.1.1`) required `compileSdk >= 37` while Flutter's default was `36`. Updated `compileSdk = 37` in `android/app/build.gradle.kts` (`android-37.0` SDK is installed locally).
+- `finalizeStop` lambda in `RecordingService.kt` inferred `() -> Boolean` from `Handler.post`; annotated explicitly as `() -> Unit`.

@@ -16,10 +16,16 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `DEV_LOG.md` — Append-only chronological engineering log of decisions, math, and open questions.
 
 ### Android Native (`android/`)
-- `android/app/build.gradle.kts` — Android app config (`com.learnese.app`, `minSdk = 29`, Java/Kotlin 17).
-- `android/app/src/main/AndroidManifest.xml` — App entry point (`Learnese`); recording permissions and foreground service added in Chunk 3.
-- `android/app/src/main/kotlin/com/learnese/app/MainActivity.kt` — Flutter host activity (platform channels and projection consent added in Chunk 3).
+- `android/app/build.gradle.kts` — Android app config (`com.learnese.app`, `minSdk = 29`, `compileSdk = 37`, Java/Kotlin 17, `androidx.core:core-ktx`, `junit`).
+- `android/app/src/main/AndroidManifest.xml` — Declares the 5 required permissions (`RECORD_AUDIO`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PROJECTION`, `POST_NOTIFICATIONS`, `SYSTEM_ALERT_WINDOW`) and `RecordingService` (`foregroundServiceType="mediaProjection"`, `exported="false"`).
 - `android/app/src/main/res/values/colors.xml` — Native color tokens mirroring `lib/theme/app_colors.dart` for the overlay and notification.
+- `android/app/src/main/res/drawable/ic_stat_learnese.xml` — Monochrome waveform status-bar icon for the ongoing recording notification.
+- `android/app/src/main/kotlin/com/learnese/app/MainActivity.kt` — Registers `MethodChannel`/`EventChannel`, runs per-session `MediaProjection` consent, delegates commands to `RecordingService`, and forwards notification tap deep links.
+- `android/app/src/main/kotlin/com/learnese/app/RecordingService.kt` — Foreground service owning `MediaProjection`, `AudioCaptureEngine`, ongoing notification, and `RecordingSessionBus`.
+- `android/app/src/main/kotlin/com/learnese/app/AudioCaptureEngine.kt` — `AudioPlaybackCaptureConfiguration` + `AudioRecord` (internal playback only, never mic) feeding `AudioRingBuffer` and flushing `.wav` snapshots on a background thread.
+- `android/app/src/main/kotlin/com/learnese/app/AudioRingBuffer.kt` — Pure JVM classes (`AudioFormatSpec`, `AudioRingBuffer`, `WavWriter`, `ClipFileNamer`) kept free of Android SDK imports for JUnit testing.
+- `android/app/src/main/kotlin/com/learnese/app/NotificationFactory.kt` — Low-importance notification channel, ongoing notification builder, active-session tap intent, and Stop Session action.
+- `android/app/src/test/kotlin/com/learnese/app/AudioRingBufferTest.kt` — JUnit tests for ring-buffer wrap-around/partial-fill/clear, 44-byte RIFF/WAVE header generation, and collision-safe clip naming.
 
 ### Flutter App (`lib/`)
 - `lib/main.dart` — App entry point (`LearneseApp`) wired to light/dark themes and a temporary bootstrap shell.
@@ -34,6 +40,8 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `lib/services/folder_repository.dart` — CRUD for `Folder`, alphabetical listing, breadcrumb ancestor resolution, and cycle-safe folder moves.
 - `lib/services/storage_service.dart` — App-specific `.wav` clip paths (`clips/session_<id>/clip_<ts>.wav`), size queries, and file/directory deletion.
 - `lib/services/preferences_service.dart` — `SharedPreferences` wrapper for last buffer length (`1..180s`) and onboarding hint flags.
+- `lib/services/recorder_channel.dart` — `MethodChannel`/`EventChannel` wrapper (`startSession`, `saveClip`, `stopSession`, `getState`, `stateStream`, notification deep-link hooks).
+- `lib/services/permission_service.dart` — Testable runtime permission wrapper (`RECORD_AUDIO`, `POST_NOTIFICATIONS`, `SYSTEM_ALERT_WINDOW`) with `PermissionGateway`.
 
 ### Tests (`test/`)
 - `test/data_models/recording_session_test.dart` — Unit tests for `RecordingSession`.
@@ -41,18 +49,20 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `test/data_models/folder_test.dart` — Unit tests for `Folder`.
 - `test/data_models/recording_state_test.dart` — Unit tests for `RecordingState` and wire parsing.
 - `test/theme/app_theme_test.dart` — Unit tests for light/dark themes and `AppRecordingColors`.
-- `test/services/database_helper_test.dart` — `sqflite_common_ffi` tests for schema creation, foreign keys, and reopen lifecycle.
+- `test/services/database_helper_test.dart` — `sqflite_common_ffi` tests for schema creation, foreign keys, concurrent opens, and CHECK constraints.
 - `test/services/session_repository_test.dart` — `sqflite_common_ffi` tests for session/clip CRUD, cascade deletes, and `.wav` file cleanup.
 - `test/services/folder_repository_test.dart` — `sqflite_common_ffi` tests for nested folders, breadcrumbs, cycle prevention, and cascade rules.
 - `test/services/storage_service_test.dart` — Unit tests for unique clip paths, file sizes, and directory cleanup.
 - `test/services/preferences_service_test.dart` — Unit tests for `PreferencesService` with mock `SharedPreferences`.
+- `test/services/recorder_channel_test.dart` — Mocked `MethodChannel`/`EventChannel` tests for `RecorderChannel`.
+- `test/services/permission_service_test.dart` — `mocktail` tests for `PermissionService`.
 - `test/widget_test.dart` — Widget test verifying `LearneseApp` bootstrap and theme setup.
 
 ## Chunk Status
 
 - [x] **Chunk 1**: Repo, Project Setup, Theme, Models & Docs
 - [x] **Chunk 2**: Database, Repositories & Storage
-- [ ] **Chunk 3**: Native Recording Core
+- [x] **Chunk 3**: Native Recording Core
 - [ ] **Chunk 4**: Overlay Button
 - [ ] **Chunk 5**: Home Flow & Active Session UI
 - [ ] **Chunk 6**: Library, Rename, Folders & Playback

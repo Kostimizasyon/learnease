@@ -10,15 +10,17 @@ Learnese separates concerns across three thin layers with no heavy state-managem
 2. **Dart Services & Models (`lib/data_models/`, `lib/services/`)**: Immutable domain models, SQLite persistence (`sqflite`), file storage, preferences, permission flows, and a platform-channel wrapper (`recorder_channel.dart`).
 3. **Android Native Engine (`android/app/src/main/kotlin/com/learnese/app/`)**: Foreground service (`RecordingService`), playback audio capture + ring buffer (`AudioCaptureEngine`), draggable overlay (`OverlayController`), notification builder (`NotificationFactory`), and consent/channel host (`MainActivity`).
 
-## Planned Dart <-> Kotlin Data Flow
+## Dart <-> Kotlin Data Flow
 
-- **Commands (`MethodChannel`)**:
-  - `startSession(bufferSeconds: int)` -> requests `MediaProjection` consent in `MainActivity`, then starts `RecordingService`.
-  - `saveClip()` -> snapshots the in-memory ring buffer and encodes to disk on a background worker thread without interrupting capture.
-  - `stopSession()` -> flushes any in-flight save, stops `AudioRecord`, releases `MediaProjection`, removes the overlay and notification, clears RAM buffer, and emits `idle`.
-- **State Stream (`EventChannel`)**:
-  - Kotlin pushes `{sessionState, bufferedMs, bufferSeconds, lastSavedClipPath?, lastSavedClipDurationMs?, lastSavedClipSizeBytes?, error?, errorMessage?}`.
-  - Dart deserializes each event via `RecordingState.fromMap(...)`.
+- **Commands (`MethodChannel`: `com.learnese.app/recorder`)**:
+  - `startSession({bufferSeconds: int, outputDir?: String})` -> validates `RECORD_AUDIO` and `1..180s` bounds, launches fresh `MediaProjection` consent in `MainActivity`, and starts `RecordingService`. Returns `true` if started or `false` if consent was cancelled/denied.
+  - `saveClip()` -> snapshots `AudioRingBuffer` synchronously and writes a `.wav` file on `AudioCaptureEngine`'s single-threaded writer executor without interrupting capture; returns `{filePath, durationMs, sizeBytes}` and publishes an active event with `lastSavedClipPath`.
+  - `stopSession()` -> stops `AudioRecord`, wipes RAM buffer, awaits any in-flight `.wav` save to finish and flush, stops `MediaProjection`, removes the notification, and emits `idle`.
+  - `getState()` -> fetches `RecordingSessionBus.latestState()` for UI synchronization.
+  - `consumeOpenActiveSession()` & native-to-Dart `onOpenActiveSession` -> routes notification taps to the active session screen on both cold launch and warm resume.
+- **State Stream (`EventChannel`: `com.learnese.app/recorder_events`)**:
+  - Kotlin pushes `{sessionState, bufferedMs, bufferSeconds, lastSavedClipPath?, lastSavedClipDurationMs?, lastSavedClipSizeBytes?, error?, errorMessage?}` via `RecordingSessionBus` on the main looper.
+  - Dart deserializes each event via `RecordingState.fromMap(...)` inside `RecorderChannel.stateStream`.
 
 ## Rolling Buffer Design & Recording Lifecycle
 

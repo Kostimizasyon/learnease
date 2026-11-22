@@ -28,13 +28,16 @@ flutter analyze
 # Run Dart & Flutter unit/widget tests
 flutter test
 
+# Run Android Kotlin JUnit tests
+cd android && ./gradlew :app:testDebugUnitTest
+
 # Run on a connected Android 10+ device or emulator
 flutter run
 ```
 
 ## Permissions Explained
 
-Learnese declares only the minimum permissions required (wired in Chunk 3):
+Learnese declares only the minimum permissions required in `android/app/src/main/AndroidManifest.xml`:
 
 | Permission | Why it is needed |
 | --- | --- |
