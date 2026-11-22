@@ -115,3 +115,11 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 - **Mid-session revocation & OS kill recovery**: `RecordingService` verifies `Settings.canDrawOverlays` on periodic progress ticks and checks `RECORD_AUDIO` on fatal `AudioRecord` read failures to report exact revocation errors. `LearneseApp` mixes in `WidgetsBindingObserver` and calls `SessionController.syncWithNative()` on `AppLifecycleState.resumed` to reconcile sessions if Android kills the foreground service in the background.
 - **UI polish**: Added `"Waiting for device audio output…"` state on `ActiveSessionPage` while buffer is at `0ms`, and added a **Retry** button on `LibraryPage` error banners.
 - **Manual QA checklist**: Documented an end-to-end physical-device QA checklist in `README.md`.
+
+---
+
+## 2026-11-22 — Folder-Scoped Next/Previous Playback & Release APK Workflow
+
+### Decisions Made
+- **Folder-scoped playlist (`LibraryController.currentFolderPlayableClips`)**: Flattens clips only across `sessions` belonging to `_currentFolderId` (excluding parent, sibling, and sub-folder clips). Passed into `PlayerSheet` so Previous/Next buttons never cross folder boundaries.
+- **Resilient track switching**: `PlayerSheet._selectIndex` increments `_loadEpoch` to ignore stale async `setFilePath` completions and keeps Previous/Next buttons available on error cards so a missing file never traps navigation.

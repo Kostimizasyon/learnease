@@ -131,5 +131,105 @@ void main() {
       expect(controller.clipsForSession(newer.id!), isEmpty);
       expect(await File(clipPath).exists(), isFalse);
     });
+
+    test('currentFolderPlayableClips includes only clips inside the currently open folder', () async {
+      await controller.createFolder('FolderA');
+      final folderA = controller.folders.single;
+      await controller.openFolder(folderA.id);
+      await controller.createFolder('SubInA');
+      final subInA = controller.folders.single;
+      await controller.openFolder(null);
+      await controller.createFolder('FolderB');
+      final folderB = controller.folders.firstWhere((f) => f.name == 'FolderB');
+
+      final rootSession = await sessionRepo.createSession(
+        RecordingSession.create(bufferSeconds: 30, name: 'Root Session'),
+      );
+      final aSession = await sessionRepo.createSession(
+        RecordingSession.create(
+          bufferSeconds: 30,
+          name: 'A Session',
+          folderId: folderA.id,
+        ),
+      );
+      final subSession = await sessionRepo.createSession(
+        RecordingSession.create(
+          bufferSeconds: 30,
+          name: 'Sub Session',
+          folderId: subInA.id,
+        ),
+      );
+      final bSession = await sessionRepo.createSession(
+        RecordingSession.create(
+          bufferSeconds: 30,
+          name: 'B Session',
+          folderId: folderB.id,
+        ),
+      );
+
+      await sessionRepo.addClip(
+        AudioClip.create(
+          sessionId: rootSession.id!,
+          filePath: '/root_1.wav',
+          durationMs: 1000,
+          sizeBytes: 100,
+          name: 'Root Clip',
+        ),
+      );
+      await sessionRepo.addClip(
+        AudioClip.create(
+          sessionId: aSession.id!,
+          filePath: '/a_1.wav',
+          durationMs: 1000,
+          sizeBytes: 100,
+          name: 'A Clip 1',
+        ),
+      );
+      await sessionRepo.addClip(
+        AudioClip.create(
+          sessionId: aSession.id!,
+          filePath: '/a_2.wav',
+          durationMs: 1000,
+          sizeBytes: 100,
+          name: 'A Clip 2',
+        ),
+      );
+      await sessionRepo.addClip(
+        AudioClip.create(
+          sessionId: subSession.id!,
+          filePath: '/sub_1.wav',
+          durationMs: 1000,
+          sizeBytes: 100,
+          name: 'Sub Clip',
+        ),
+      );
+      await sessionRepo.addClip(
+        AudioClip.create(
+          sessionId: bSession.id!,
+          filePath: '/b_1.wav',
+          durationMs: 1000,
+          sizeBytes: 100,
+          name: 'B Clip',
+        ),
+      );
+
+      await controller.openFolder(folderA.id);
+      expect(
+        controller.currentFolderPlayableClips.map((p) => p.clip.name),
+        <String>['A Clip 1', 'A Clip 2'],
+      );
+
+      await controller.openFolder(subInA.id);
+      expect(
+        controller.currentFolderPlayableClips.map((p) => p.clip.name),
+        <String>['Sub Clip'],
+      );
+
+      await controller.openFolder(null);
+      expect(
+        controller.currentFolderPlayableClips.map((p) => p.clip.name),
+        <String>['Root Clip'],
+      );
+    });
   });
 }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../data_models/audio_clip.dart';
 import '../data_models/folder.dart';
 import '../data_models/recording_session.dart';
+import '../pages/library_page/player_sheet.dart';
 import 'folder_repository.dart';
 import 'session_controller.dart';
 import 'session_repository.dart';
@@ -46,6 +47,19 @@ class LibraryController extends ChangeNotifier {
 
   List<AudioClip> clipsForSession(int sessionId) =>
       _clipsBySession[sessionId] ?? const <AudioClip>[];
+
+  /// Returns all clips belonging strictly to sessions inside the currently open folder.
+  List<PlayableClip> get currentFolderPlayableClips {
+    final result = <PlayableClip>[];
+    for (final session in _sessions) {
+      final sessionId = session.id;
+      if (sessionId == null) continue;
+      for (final clip in clipsForSession(sessionId)) {
+        result.add(PlayableClip(clip: clip, sessionName: session.name));
+      }
+    }
+    return List<PlayableClip>.unmodifiable(result);
+  }
 
   Future<void> load() async {
     _isLoading = true;

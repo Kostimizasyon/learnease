@@ -57,22 +57,36 @@ class JustAudioClipPlayer implements ClipAudioPlayer {
 
 typedef ClipPlayerFactory = ClipAudioPlayer Function();
 
+@immutable
+class PlayableClip {
+  const PlayableClip({required this.clip, this.sessionName});
+
+  final AudioClip clip;
+  final String? sessionName;
+}
+
 class PlayerSheet extends StatefulWidget {
   const PlayerSheet({
     super.key,
     required this.clip,
     this.sessionName,
+    this.playlist,
+    this.initialIndex = 0,
     this.playerFactory,
   });
 
   final AudioClip clip;
   final String? sessionName;
+  final List<PlayableClip>? playlist;
+  final int initialIndex;
   final ClipPlayerFactory? playerFactory;
 
   static Future<void> show({
     required BuildContext context,
     required AudioClip clip,
     String? sessionName,
+    List<PlayableClip>? playlist,
+    int initialIndex = 0,
     ClipPlayerFactory? playerFactory,
   }) {
     return showModalBottomSheet<void>(
@@ -82,6 +96,8 @@ class PlayerSheet extends StatefulWidget {
       builder: (BuildContext _) => PlayerSheet(
         clip: clip,
         sessionName: sessionName,
+        playlist: playlist,
+        initialIndex: initialIndex,
         playerFactory: playerFactory,
       ),
     );
@@ -93,6 +109,8 @@ class PlayerSheet extends StatefulWidget {
 
 class _PlayerSheetState extends State<PlayerSheet> {
   late final ClipAudioPlayer _player;
+  late final List<PlayableClip> _playlist;
+  late int _currentIndex;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration?>? _durationSub;
   StreamSubscription<bool>? _playingSub;
@@ -103,11 +121,27 @@ class _PlayerSheetState extends State<PlayerSheet> {
   bool _isPlaying = false;
   bool _isLoading = true;
   String? _errorText;
+  int _loadEpoch = 0;
+
+  PlayableClip get _currentItem => _playlist[_currentIndex];
+  bool get _hasPrevious => _currentIndex > 0;
+  bool get _hasNext => _currentIndex < _playlist.length - 1;
 
   @override
   void initState() {
     super.initState();
-    _duration = widget.clip.duration;
+    final provided = widget.playlist;
+    if (provided != null && provided.isNotEmpty) {
+      _playlist = List<PlayableClip>.unmodifiable(provided);
+      _currentIndex = widget.initialIndex.clamp(0, _playlist.length - 1);
+    } else {
+      _playlist = <PlayableClip>[
+        PlayableClip(clip: widget.clip, sessionName: widget.sessionName),
+      ];
+      _currentIndex = 0;
+    }
+
+    _duration = _currentItem.clip.duration;
     _player = (widget.playerFactory ?? JustAudioClipPlayer.new)();
 
     _positionSub = _player.positionStream.listen((Duration pos) {
@@ -123,26 +157,51 @@ class _PlayerSheetState extends State<PlayerSheet> {
       setState(() => _isPlaying = playing);
     });
 
-    _loadClip();
+    _loadCurrentClip();
   }
 
-  Future<void> _loadClip() async {
+  Future<void> _loadCurrentClip({bool autoPlay = false}) async {
+    final epoch = ++_loadEpoch;
+    final item = _currentItem;
+
     try {
-      final loadedDuration = await _player.setFilePath(widget.clip.filePath);
-      if (!mounted) return;
+      if (_isPlaying) {
+        await _player.pause();
+      }
+      final loadedDuration = await _player.setFilePath(item.clip.filePath);
+      if (!mounted || epoch != _loadEpoch) return;
       setState(() {
-        if (loadedDuration != null) {
-          _duration = loadedDuration;
-        }
+        _position = Duration.zero;
+        _dragMs = null;
+        _errorText = null;
+        _duration = loadedDuration ?? item.clip.duration;
         _isLoading = false;
       });
+      if (autoPlay) {
+        await _player.play();
+      }
     } catch (_) {
-      if (!mounted) return;
+      if (!mounted || epoch != _loadEpoch) return;
       setState(() {
         _isLoading = false;
         _errorText = 'Could not load audio file. It may have been removed.';
       });
     }
+  }
+
+  Future<void> _selectIndex(int index) async {
+    if (index < 0 || index >= _playlist.length || index == _currentIndex) {
+      return;
+    }
+    setState(() {
+      _currentIndex = index;
+      _position = Duration.zero;
+      _dragMs = null;
+      _duration = _playlist[index].clip.duration;
+      _errorText = null;
+      _isLoading = true;
+    });
+    await _loadCurrentClip(autoPlay: true);
   }
 
   Future<void> _togglePlayPause() async {
@@ -180,6 +239,7 @@ class _PlayerSheetState extends State<PlayerSheet> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final item = _currentItem;
     final totalMs = _duration.inMilliseconds.toDouble();
     final maxMs = totalMs > 0 ? totalMs : 1.0;
     final currentMs = (_dragMs ?? _position.inMilliseconds.toDouble()).clamp(
@@ -195,7 +255,7 @@ class _PlayerSheetState extends State<PlayerSheet> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Text(
-              widget.clip.name,
+              item.clip.name,
               style: theme.textTheme.titleLarge,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -203,15 +263,17 @@ class _PlayerSheetState extends State<PlayerSheet> {
             const SizedBox(height: 4),
             Text(
               <String>[
-                if (widget.sessionName != null) widget.sessionName!,
-                ClipTile.formatSize(widget.clip.sizeBytes),
+                if (item.sessionName != null) item.sessionName!,
+                ClipTile.formatSize(item.clip.sizeBytes),
+                if (_playlist.length > 1)
+                  '${_currentIndex + 1} / ${_playlist.length} in folder',
               ].join(' • '),
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colors.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 16),
-            if (_errorText != null)
+            if (_errorText != null) ...<Widget>[
               Card(
                 color: colors.errorContainer,
                 child: Padding(
@@ -223,8 +285,33 @@ class _PlayerSheetState extends State<PlayerSheet> {
                     ),
                   ),
                 ),
-              )
-            else ...<Widget>[
+              ),
+              if (_playlist.length > 1) ...<Widget>[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    IconButton(
+                      tooltip: 'Previous clip',
+                      onPressed: _hasPrevious
+                          ? () => _selectIndex(_currentIndex - 1)
+                          : null,
+                      icon: const Icon(Icons.skip_previous_rounded),
+                      iconSize: 30,
+                    ),
+                    const SizedBox(width: 24),
+                    IconButton(
+                      tooltip: 'Next clip',
+                      onPressed: _hasNext
+                          ? () => _selectIndex(_currentIndex + 1)
+                          : null,
+                      icon: const Icon(Icons.skip_next_rounded),
+                      iconSize: 30,
+                    ),
+                  ],
+                ),
+              ],
+            ] else ...<Widget>[
               Slider(
                 value: currentMs,
                 max: maxMs,
@@ -264,6 +351,17 @@ class _PlayerSheetState extends State<PlayerSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
+                  if (_playlist.length > 1) ...<Widget>[
+                    IconButton(
+                      tooltip: 'Previous clip',
+                      onPressed: _hasPrevious
+                          ? () => _selectIndex(_currentIndex - 1)
+                          : null,
+                      icon: const Icon(Icons.skip_previous_rounded),
+                      iconSize: 30,
+                    ),
+                    const SizedBox(width: 4),
+                  ],
                   IconButton(
                     tooltip: 'Back 5 seconds',
                     onPressed: _isLoading
@@ -272,7 +370,7 @@ class _PlayerSheetState extends State<PlayerSheet> {
                     icon: const Icon(Icons.replay_5_rounded),
                     iconSize: 28,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   FilledButton(
                     style: FilledButton.styleFrom(
                       shape: const CircleBorder(),
@@ -295,7 +393,7 @@ class _PlayerSheetState extends State<PlayerSheet> {
                             size: 32,
                           ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
                   IconButton(
                     tooltip: 'Forward 5 seconds',
                     onPressed: _isLoading
@@ -304,6 +402,17 @@ class _PlayerSheetState extends State<PlayerSheet> {
                     icon: const Icon(Icons.forward_5_rounded),
                     iconSize: 28,
                   ),
+                  if (_playlist.length > 1) ...<Widget>[
+                    const SizedBox(width: 4),
+                    IconButton(
+                      tooltip: 'Next clip',
+                      onPressed: _hasNext
+                          ? () => _selectIndex(_currentIndex + 1)
+                          : null,
+                      icon: const Icon(Icons.skip_next_rounded),
+                      iconSize: 30,
+                    ),
+                  ],
                 ],
               ),
             ],

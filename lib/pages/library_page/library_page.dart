@@ -148,10 +148,18 @@ class _LibraryPageState extends State<LibraryPage> {
     RecordingSession session,
     AudioClip clip,
   ) {
+    final playlist = widget.controller.currentFolderPlayableClips;
+    final initialIndex = playlist.indexWhere(
+      (PlayableClip item) =>
+          (clip.id != null && item.clip.id == clip.id) ||
+          item.clip.filePath == clip.filePath,
+    );
     return PlayerSheet.show(
       context: context,
       clip: clip,
       sessionName: session.name,
+      playlist: playlist.isEmpty ? null : playlist,
+      initialIndex: initialIndex >= 0 ? initialIndex : 0,
       playerFactory: widget.playerFactory,
     );
   }
