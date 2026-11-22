@@ -26,7 +26,7 @@ Learnese separates concerns across three thin layers with no heavy state-managem
 2. After projection consent, `RecordingService` allocates a fixed-size byte ring buffer sized for **X** seconds of 16-bit PCM audio.
 3. `AudioRecord` (configured via `AudioPlaybackCaptureConfiguration` with `USAGE_MEDIA`, `USAGE_GAME`, and `USAGE_UNKNOWN`) continuously appends captured PCM frames into the ring buffer, overwriting the oldest samples once full.
 4. Nothing is written to disk until the user taps the floating overlay button (or triggers `saveClip()`).
-5. On save, the ring buffer is snapshotted in chronological order (oldest -> newest, handling wrap-around and partial fill if `< X` seconds have elapsed) and handed to an asynchronous encoder.
+5. On save, the ring buffer is snapshotted in chronological order (oldest -> newest, handling wrap-around and partial fill if `< X` seconds have elapsed) and written as a 44.1 kHz 16-bit mono `.wav` (44-byte RIFF header + PCM bytes) on a background worker thread.
 6. Ending a session via overlay drag-to-dismiss, notification Stop, in-app Stop, or system projection revocation goes through the single `stopSession()` cleanup path.
 
 ## Data Models & SQLite Schema (Chunk 1 -> Chunk 2)

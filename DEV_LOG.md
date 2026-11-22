@@ -28,6 +28,6 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 ### Problems Hit
 - `flutter create --org com.learnese --project-name learnese` generated `com.learnese.learnese` as the Android application ID and Kotlin package path. Fixed immediately by updating `build.gradle.kts` to `com.learnese.app`, moving `MainActivity.kt` to `kotlin/com/learnese/app/`, and deleting the old folder.
 
-### Open Questions (for Developer before Chunk 3)
-1. **Output format — AAC `.m4a` vs uncompressed PCM `.wav`**: The spec mentions *"Encode to AAC (`.wav`) with `MediaCodec` + `MediaMuxer` to keep files small"* (Section 2) and *"encodes it to a new `.wav`"* (Section 3.2). Android's `MediaMuxer` cannot write `.wav` containers — AAC + `MediaMuxer` produces **`.m4a`** (MPEG-4 audio, ~480 KB for 30s at 128 kbps), whereas **`.wav`** is raw PCM (~2.5 MB for 30s mono, instant write, no `MediaCodec` needed). Which do you prefer for Chunk 3: **AAC in `.m4a`** (small files via `MediaCodec` + `MediaMuxer`) or **PCM `.wav`**?
-2. **Channel count**: Is **44.1 kHz 16-bit mono** (~15.1 MiB max buffer) good for your primary use case, or would you prefer **stereo** (~30.3 MiB max buffer) for music?
+### Open Questions (Resolved)
+1. **Output format**: Locked in **44.1 kHz 16-bit mono `.wav`** (44-byte RIFF header + raw PCM) instead of AAC `.m4a` (`MediaCodec`/`MediaMuxer`). Reasoning: near-instant saves, zero OEM `MediaCodec` quirks, lossless quality for language/study tooling, and pure-Kotlin unit-testability. Storage cost (~86.1 KiB/s, ~2.52 MiB per 30s) is acceptable.
+2. **Channel count**: **Mono (1 channel)** confirmed (~15.14 MiB max ring buffer at 180s).

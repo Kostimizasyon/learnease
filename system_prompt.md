@@ -37,7 +37,7 @@ Strict behavioral constraints:
 - **Platform**: Android only (`minSdk 29`, target latest stable SDK). No iOS, no web: create the project with `flutter create --platforms=android` and do not add other platform folders.
 - **App id / name**: `com.learnese.app` / **Learnese**.
 - **Flutter** for UI; **Kotlin** for native recording, overlay, and foreground service, bridged via `MethodChannel` (commands) and `EventChannel` (session state and buffered-duration stream).
-- **Capture API**: `AudioPlaybackCaptureConfiguration` + `MediaProjection` + `AudioRecord`, usage filters `USAGE_MEDIA`, `USAGE_GAME`, `USAGE_UNKNOWN`. Encode to AAC (`.wav`) with `MediaCodec` + `MediaMuxer` to keep files small. Do not use `MediaRecorder` with a mic source.
+- **Capture API**: `AudioPlaybackCaptureConfiguration` + `MediaProjection` + `AudioRecord`, usage filters `USAGE_MEDIA`, `USAGE_GAME`, `USAGE_UNKNOWN`. Write 44.1 kHz 16-bit mono PCM directly to `.wav` (RIFF header + PCM bytes) on a background thread for instant, lossless, OEM-quirk-free saves. Do not use `MediaRecorder` with a mic source.
 - **Overlay**: native `WindowManager` view with `TYPE_APPLICATION_OVERLAY`, hosted by the foreground service (not a Flutter widget).
 - **Dart packages** (justify any additions in `DEV_LOG.md`): `sqflite`, `path`, `path_provider`, `shared_preferences`, `permission_handler`, `just_audio` (playback), `flutter_launcher_icons` (dev), `sqflite_common_ffi` (dev, for DB tests), `mocktail` (dev).
 - **State management**: keep it simple (`ChangeNotifier` / `ValueNotifier` + `ListenableBuilder`). No heavy frameworks.
@@ -116,7 +116,7 @@ Dart models in `lib/data_models/`: `recording_session.dart`, `audio_clip.dart`, 
 │   └── kotlin/com/learnese/app/
 │       ├── MainActivity.kt            # channel registration, projection consent, notification deep link
 │       ├── RecordingService.kt        # foreground service, owns capture + overlay + notification
-│       ├── AudioCaptureEngine.kt      # AudioPlaybackCapture + AAC encoding
+│       ├── AudioCaptureEngine.kt      # AudioPlaybackCapture + ring buffer + WAV writer
 │       ├── OverlayController.kt       # draggable floating button
 │       └── NotificationFactory.kt     # channel + notification builder
 ├── android/app/src/test/kotlin/...    # JUnit tests for pure Kotlin logic
