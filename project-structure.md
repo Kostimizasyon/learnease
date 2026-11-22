@@ -9,6 +9,7 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 ### Root, Assets & Documentation
 - `pubspec.yaml` — Package manifest, dependencies (`sqflite`, `path`, `path_provider`, `shared_preferences`, `permission_handler`, `just_audio`), dev/test tools (`sqflite_common_ffi`, `mocktail`, `flutter_launcher_icons`, `flutter_lints`), and adaptive icon config.
 - `assets/icon/` — Original Learnese icon master (`learnese_icon.svg`) and 1024×1024 PNG sources (`icon_full.png`, `icon_foreground.png`, `icon_monochrome.png`) wired to `flutter_launcher_icons`.
+- `assets/fonts/` — Bundled Comic Sans font files (`ComicSansMS-Regular.ttf`, `ComicSansMS-Bold.ttf`) wired as `ComicSans` in `pubspec.yaml` and `AppTheme`.
 - `analysis_options.yaml` — Strict Dart analyzer settings (`strict-casts`, `strict-inference`, `strict-raw-types`) and `flutter_lints` rules.
 - `.gitignore` — Excludes Flutter/Android build outputs, IDE files, `.env`, and signing keystores.
 - `README.md` — Product overview, requirements, build/test commands, permissions, and Android platform limitations.
@@ -52,7 +53,7 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `lib/services/session_controller.dart` — `ChangeNotifier` orchestrating session start/stop, native event stream ingestion, clip DB persistence with deduplication, stale-session reconciliation, and notification deep-link callbacks.
 - `lib/services/library_controller.dart` — `ChangeNotifier` coordinating folder browsing, breadcrumbs, cycle-safe move targets, session/clip/folder CRUD, and live refresh on session changes.
 - `lib/pages/util/app_dialog.dart` — Reusable dialogs with semantic named constructors (`AppDialog.rename()`, `AppDialog.createFolder()`, `AppDialog.confirmDelete()`, `AppDialog.pickFolder()`).
-- `lib/pages/util/custom_app_bar.dart` — `CustomAppBar.standard()` and `CustomAppBar.recording()` with live recording dot indicator.
+- `lib/pages/util/floating_pill_nav_bar.dart` — Floating stadium-pill bottom navigation bar displaying icons and page names (`Record` / `Active`, `Library`).
 - `lib/pages/util/permission_gate.dart` — Reusable permission setup widget (`PermissionGate.sessionSetup()`, `PermissionGate.overlayOnly()`) with lifecycle-resume re-check after returning from Android overlay Settings.
 - `lib/pages/home_page/util/buffer_length_picker.dart` — `BufferLengthChip.preset()`, `BufferLengthChip.custom()`, and `BufferLengthPicker` (5/10/15/30/60s + custom 1–180s dialog + RAM pill).
 - `lib/pages/home_page/util/record_button.dart` — `RecordButton.start()` and `RecordButton.stop()`.

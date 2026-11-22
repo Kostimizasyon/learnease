@@ -13,6 +13,7 @@ void main() {
 
         expect(theme.useMaterial3, isTrue);
         expect(theme.brightness, Brightness.light);
+        expect(theme.textTheme.bodyMedium?.fontFamily, AppTheme.fontFamily);
         expect(theme.colorScheme.primary, AppColors.primaryLight);
         expect(theme.scaffoldBackgroundColor, AppColors.backgroundLight);
         expect(recording, isNotNull);
@@ -28,6 +29,7 @@ void main() {
 
         expect(theme.useMaterial3, isTrue);
         expect(theme.brightness, Brightness.dark);
+        expect(theme.textTheme.bodyMedium?.fontFamily, AppTheme.fontFamily);
         expect(theme.colorScheme.primary, AppColors.primaryDark);
         expect(theme.scaffoldBackgroundColor, AppColors.backgroundDark);
         expect(recording, isNotNull);

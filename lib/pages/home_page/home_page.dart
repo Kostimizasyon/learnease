@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../services/session_controller.dart';
 import '../../theme/app_colors.dart';
-import '../util/custom_app_bar.dart';
 import '../util/permission_gate.dart';
 import 'active_session_page.dart';
 import 'util/buffer_length_picker.dart';
@@ -123,73 +122,80 @@ class HomePage extends StatelessWidget {
         final statusMessage = controller.statusMessage;
 
         return Scaffold(
-          appBar: CustomAppBar.standard(
-            title: 'Learnese',
-            actions: <Widget>[
-              IconButton(
-                tooltip: 'How capture works',
-                onPressed: () => _showCaptureInfoSheet(context),
-                icon: const Icon(Icons.info_outline_rounded),
-              ),
-            ],
-          ),
           body: SafeArea(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 96),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      minHeight: constraints.maxHeight - 32,
+                      minHeight: (constraints.maxHeight - 108).clamp(
+                        0.0,
+                        double.infinity,
+                      ),
                     ),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        if (statusMessage != null)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colors.errorContainer,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Row(
-                              children: <Widget>[
-                                Icon(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: IconButton(
+                                tooltip: 'How capture works',
+                                onPressed: () => _showCaptureInfoSheet(context),
+                                icon: Icon(
                                   Icons.info_outline_rounded,
-                                  size: 18,
-                                  color: colors.onErrorContainer,
+                                  color: colors.onSurfaceVariant,
                                 ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    statusMessage,
-                                    style: theme.textTheme.bodySmall?.copyWith(
+                              ),
+                            ),
+                            if (statusMessage != null) ...<Widget>[
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colors.errorContainer,
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Row(
+                                  children: <Widget>[
+                                    Icon(
+                                      Icons.info_outline_rounded,
+                                      size: 18,
                                       color: colors.onErrorContainer,
                                     ),
-                                  ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        statusMessage,
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: colors.onErrorContainer,
+                                            ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: controller.clearStatusMessage,
+                                      visualDensity: VisualDensity.compact,
+                                      icon: Icon(
+                                        Icons.close_rounded,
+                                        size: 18,
+                                        color: colors.onErrorContainer,
+                                      ),
+                                      tooltip: 'Dismiss',
+                                    ),
+                                  ],
                                 ),
-                                IconButton(
-                                  onPressed: controller.clearStatusMessage,
-                                  visualDensity: VisualDensity.compact,
-                                  icon: Icon(
-                                    Icons.close_rounded,
-                                    size: 18,
-                                    color: colors.onErrorContainer,
-                                  ),
-                                  tooltip: 'Dismiss',
-                                ),
-                              ],
-                            ),
-                          )
-                        else
-                          const SizedBox(height: 8),
+                              ),
+                            ],
+                          ],
+                        ),
                         Column(
                           children: <Widget>[
                             Container(
@@ -237,7 +243,7 @@ class HomePage extends StatelessWidget {
                               isLoading: controller.isBusy,
                               onPressed: () => _handleRecordNow(context),
                             ),
-                            const SizedBox(height: 12),
+                            const SizedBox(height: 8),
                             Center(
                               child: TextButton(
                                 onPressed: () => _showCaptureInfoSheet(context),

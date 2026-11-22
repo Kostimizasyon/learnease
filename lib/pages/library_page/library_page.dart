@@ -5,7 +5,6 @@ import '../../data_models/folder.dart';
 import '../../data_models/recording_session.dart';
 import '../../services/library_controller.dart';
 import '../util/app_dialog.dart';
-import '../util/custom_app_bar.dart';
 import 'player_sheet.dart';
 import 'util/folder_tile.dart';
 import 'util/session_tile.dart';
@@ -175,20 +174,29 @@ class _LibraryPageState extends State<LibraryPage> {
         final isEmpty = ctrl.folders.isEmpty && ctrl.sessions.isEmpty;
 
         return Scaffold(
-          appBar: CustomAppBar.standard(
-            title: 'Library',
-            actions: <Widget>[
-              IconButton(
-                tooltip: 'New Folder',
-                onPressed: () => _handleCreateFolder(context),
-                icon: const Icon(Icons.create_new_folder_outlined),
-              ),
-            ],
-          ),
           body: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 12, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: <Widget>[
+                      Text(
+                        'Library',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      IconButton.filledTonal(
+                        tooltip: 'New Folder',
+                        onPressed: () => _handleCreateFolder(context),
+                        icon: const Icon(Icons.create_new_folder_outlined),
+                      ),
+                    ],
+                  ),
+                ),
                 if (!ctrl.isAtRoot)
                   _BreadcrumbBar(
                     breadcrumbs: ctrl.breadcrumbs,
@@ -234,7 +242,7 @@ class _LibraryPageState extends State<LibraryPage> {
                       : RefreshIndicator(
                           onRefresh: ctrl.load,
                           child: ListView(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
                             children: <Widget>[
                               if (ctrl.folders.isNotEmpty) ...<Widget>[
                                 Text(

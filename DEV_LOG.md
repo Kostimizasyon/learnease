@@ -141,3 +141,12 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 - **Updated Presets**: Changed `RecordingSession.presetBufferSeconds` to `[5, 10, 15, 30, 60]` (keeping `1..180s` custom cap).
 - **Modern Alert Dialogs**: Added rounded 24dp `DialogThemeData`, circular tonal icon badges, centered headings/subtitles, rounded selectable folder rows in `AppDialog.pickFolder`, and full-width split Cancel/Confirm buttons across `AppDialog` and `_CustomBufferDialog`.
 - **Compact Session Naming (`S-DD:MM:YY`)**: Updated `RecordingSession.defaultName()` to zero-padded `S-DD:MM:YY` (2-digit day, month, and year) and surfaced `HH:mm` start time in `SessionTile`'s subtitle for easy same-day differentiation.
+
+---
+
+## 2026-11-22 — Comic Sans Typography, AppBar Removal & Floating Pill Navigation Bar
+
+### Decisions Made
+- **Bundled `ComicSans` font**: Copied `comic.ttf` and `comicbd.ttf` into `assets/fonts/` and registered `ComicSans` in `pubspec.yaml` + `AppTheme` so the font renders reliably offline on Android without needing `INTERNET` permission (note: swap to an SIL OFL alternative such as Comic Neue before any public store release).
+- **Removed AppBars**: Removed `AppBar` and unused `custom_app_bar.dart` across `HomePage`, `ActiveSessionPage`, and `LibraryPage`, replacing them with clean inline `SafeArea` headers/actions.
+- **Floating Pill Navigation Bar**: Replaced full-width `NavigationBar` with `FloatingPillNavBar` (`extendBody: true` + bottom scroll padding `96dp`), keeping both icons and page names (`Record` / `Active`, `Library`).

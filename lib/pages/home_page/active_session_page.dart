@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../services/session_controller.dart';
 import '../../theme/app_theme.dart';
-import '../util/custom_app_bar.dart';
 import 'util/record_button.dart';
 
 class ActiveSessionPage extends StatelessWidget {
@@ -44,11 +43,30 @@ class ActiveSessionPage extends StatelessWidget {
         final statusMessage = controller.statusMessage;
 
         return Scaffold(
-          appBar: const CustomAppBar.recording(title: 'Active Session'),
           body: SafeArea(
             child: ListView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
               children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: recordingColors.recording,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Active Session',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
                 Card(
                   color: recordingColors.recordingContainer,
                   child: Padding(

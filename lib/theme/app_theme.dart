@@ -62,6 +62,8 @@ class AppRecordingColors extends ThemeExtension<AppRecordingColors> {
 }
 
 abstract final class AppTheme {
+  static const String fontFamily = 'ComicSans';
+
   static ThemeData light() {
     const colorScheme = ColorScheme(
       brightness: Brightness.light,
@@ -139,6 +141,7 @@ abstract final class AppTheme {
 
     return ThemeData(
       useMaterial3: true,
+      fontFamily: fontFamily,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: scaffoldBackground,
       extensions: <ThemeExtension<dynamic>>[recordingColors],
@@ -166,11 +169,13 @@ abstract final class AppTheme {
           side: BorderSide(color: colorScheme.outlineVariant),
         ),
         titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: colorScheme.onSurface,
         ),
         contentTextStyle: TextStyle(
+          fontFamily: fontFamily,
           fontSize: 14,
           height: 1.45,
           color: colorScheme.onSurfaceVariant,

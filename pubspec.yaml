@@ -26,6 +26,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: ComicSans
+      fonts:
+        - asset: assets/fonts/ComicSansMS-Regular.ttf
+        - asset: assets/fonts/ComicSansMS-Bold.ttf
+          weight: 700
 
 flutter_launcher_icons:
   android: true

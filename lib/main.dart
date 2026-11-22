@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'pages/home_page/home_page.dart';
 import 'pages/library_page/library_page.dart';
 import 'pages/library_page/player_sheet.dart';
+import 'pages/util/floating_pill_nav_bar.dart';
 import 'services/database_helper.dart';
 import 'services/folder_repository.dart';
 import 'services/library_controller.dart';
@@ -150,6 +151,7 @@ class _LearneseAppState extends State<LearneseApp> with WidgetsBindingObserver {
       darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.system,
       home: Scaffold(
+        extendBody: true,
         body: IndexedStack(
           index: _currentTab,
           children: <Widget>[
@@ -163,28 +165,28 @@ class _LearneseAppState extends State<LearneseApp> with WidgetsBindingObserver {
         bottomNavigationBar: ListenableBuilder(
           listenable: _sessionController,
           builder: (BuildContext context, Widget? _) {
-            return NavigationBar(
+            final isActive = _sessionController.isSessionActive;
+            return FloatingPillNavBar(
               selectedIndex: _currentTab,
-              onDestinationSelected: (int index) {
+              onSelected: (int index) {
                 if (index == 1) {
                   _libraryController?.load();
                 }
                 setState(() => _currentTab = index);
               },
-              destinations: <NavigationDestination>[
-                NavigationDestination(
-                  icon: Icon(
-                    _sessionController.isSessionActive
-                        ? Icons.graphic_eq_rounded
-                        : Icons.radio_button_checked_rounded,
-                  ),
-                  label: _sessionController.isSessionActive
-                      ? 'Active'
-                      : 'Record',
+              items: <FloatingPillNavItem>[
+                FloatingPillNavItem(
+                  icon: isActive
+                      ? Icons.graphic_eq_rounded
+                      : Icons.radio_button_checked_rounded,
+                  selectedIcon: isActive
+                      ? Icons.graphic_eq_rounded
+                      : Icons.radio_button_checked_rounded,
+                  label: isActive ? 'Active' : 'Record',
                 ),
-                const NavigationDestination(
-                  icon: Icon(Icons.library_music_outlined),
-                  selectedIcon: Icon(Icons.library_music_rounded),
+                const FloatingPillNavItem(
+                  icon: Icons.library_music_outlined,
+                  selectedIcon: Icons.library_music_rounded,
                   label: 'Library',
                 ),
               ],

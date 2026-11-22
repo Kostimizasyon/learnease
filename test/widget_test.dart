@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:learnese/data_models/recording_state.dart';
 import 'package:learnese/main.dart';
+import 'package:learnese/pages/util/floating_pill_nav_bar.dart';
 import 'package:learnese/services/permission_service.dart';
 import 'package:learnese/services/preferences_service.dart';
 import 'package:learnese/services/recorder_channel.dart';
@@ -65,8 +66,11 @@ void main() {
       expect(materialApp.themeMode, ThemeMode.system);
       expect(materialApp.theme?.extension<AppRecordingColors>(), isNotNull);
       expect(materialApp.darkTheme?.extension<AppRecordingColors>(), isNotNull);
+      expect(find.byType(AppBar), findsNothing);
+      expect(find.byType(FloatingPillNavBar), findsOneWidget);
+      expect(find.text('Record'), findsOneWidget);
+      expect(find.text('Library'), findsOneWidget);
       expect(find.text('Record Now'), findsOneWidget);
-      expect(find.byType(NavigationBar), findsOneWidget);
     },
   );
 }
