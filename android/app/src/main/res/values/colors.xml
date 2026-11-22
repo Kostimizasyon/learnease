@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Mirrors lib/theme/app_colors.dart for native overlay and notification styling. -->
+<resources>
+    <color name="learnese_primary_light">#0F766E</color>
+    <color name="learnese_primary_dark">#2DD4BF</color>
+    <color name="learnese_recording_accent">#DC2626</color>
+    <color name="learnese_recording_dot">#EF4444</color>
+
+    <!-- Floating overlay button -->
+    <color name="overlay_surface">#CC131C22</color>
+    <color name="overlay_border">#662DD4BF</color>
+    <color name="overlay_icon">#F1F5F9</color>
+    <color name="overlay_save_flash">#0F766E</color>
+    <color name="overlay_dismiss_bg">#D9DC2626</color>
+    <color name="overlay_dismiss_icon">#FFFFFF</color>
+</resources>
