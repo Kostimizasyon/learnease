@@ -5,12 +5,14 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.provider.Settings
 import androidx.core.app.ServiceCompat
 import io.flutter.plugin.common.EventChannel
 import java.io.File
@@ -92,6 +94,7 @@ class RecordingService : Service() {
     private var mediaProjection: MediaProjection? = null
     private var projectionCallback: MediaProjection.Callback? = null
     private var captureEngine: AudioCaptureEngine? = null
+    private var overlayController: OverlayController? = null
     private var bufferSeconds: Int = 30
     private var savedClipCount: Int = 0
     private var isSessionActive: Boolean = false
@@ -160,6 +163,14 @@ class RecordingService : Service() {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION,
         )
 
+        if (!Settings.canDrawOverlays(this)) {
+            failStartup(
+                "overlay_permission_denied",
+                "Display over other apps permission is required.",
+            )
+            return
+        }
+
         val projectionManager = getSystemService(MediaProjectionManager::class.java)
         val projection = try {
             projectionManager?.getMediaProjection(resultCode, resultData)
@@ -223,7 +234,24 @@ class RecordingService : Service() {
         isSessionActive = true
         activeInstance = this
 
-        // TODO(chunk-4): Attach OverlayController here when session starts and detach on stop.
+        val overlay = OverlayController(
+            context = this,
+            onSaveRequested = { onSaveComplete ->
+                saveClip { result -> onSaveComplete(result.isSuccess) }
+            },
+            onDismissSession = {
+                // Removing the floating button always ends the session via the shared stop path.
+                stopSessionInternal()
+            },
+        )
+        if (!overlay.show()) {
+            stopSessionInternal(
+                error = "overlay_permission_denied",
+                errorMessage = "Could not attach floating overlay button.",
+            )
+            return
+        }
+        overlayController = overlay
 
         RecordingSessionBus.publish(
             RecordingSessionBus.activePayload(
@@ -234,6 +262,7 @@ class RecordingService : Service() {
     }
 
     private fun failStartup(errorCode: String, message: String) {
+        detachOverlay()
         releaseProjection()
         isSessionActive = false
         if (activeInstance === this) activeInstance = null
@@ -295,6 +324,7 @@ class RecordingService : Service() {
         }
 
         isSessionActive = false
+        detachOverlay()
         val engine = captureEngine
         captureEngine = null
 
@@ -365,9 +395,27 @@ class RecordingService : Service() {
         }
     }
 
+    private fun detachOverlay() {
+        val overlay = overlayController
+        overlayController = null
+        if (overlay == null) return
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            overlay.hide()
+        } else {
+            mainHandler.post { overlay.hide() }
+        }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        overlayController?.reclampToScreen()
+    }
+
     override fun onDestroy() {
         if (!stopping.get()) {
             stopSessionInternal()
+        } else {
+            detachOverlay()
         }
         super.onDestroy()
     }

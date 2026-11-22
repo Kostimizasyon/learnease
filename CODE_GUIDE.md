@@ -13,10 +13,11 @@ Learnese separates concerns across three thin layers with no heavy state-managem
 ## Dart <-> Kotlin Data Flow
 
 - **Commands (`MethodChannel`: `com.learnese.app/recorder`)**:
-  - `startSession({bufferSeconds: int, outputDir?: String})` -> validates `RECORD_AUDIO` and `1..180s` bounds, launches fresh `MediaProjection` consent in `MainActivity`, and starts `RecordingService`. Returns `true` if started or `false` if consent was cancelled/denied.
+  - `startSession({bufferSeconds: int, outputDir?: String})` -> validates `RECORD_AUDIO`, `Settings.canDrawOverlays`, and `1..180s` bounds, launches fresh `MediaProjection` consent in `MainActivity`, and starts `RecordingService`. Returns `true` if started or `false` if consent was cancelled/denied.
   - `saveClip()` -> snapshots `AudioRingBuffer` synchronously and writes a `.wav` file on `AudioCaptureEngine`'s single-threaded writer executor without interrupting capture; returns `{filePath, durationMs, sizeBytes}` and publishes an active event with `lastSavedClipPath`.
-  - `stopSession()` -> stops `AudioRecord`, wipes RAM buffer, awaits any in-flight `.wav` save to finish and flush, stops `MediaProjection`, removes the notification, and emits `idle`.
+  - `stopSession()` -> detaches the floating overlay immediately, stops `AudioRecord`, wipes RAM buffer, awaits any in-flight `.wav` save to finish and flush, stops `MediaProjection`, removes the notification, and emits `idle`.
   - `getState()` -> fetches `RecordingSessionBus.latestState()` for UI synchronization.
+  - `hasOverlayPermission()` / `openOverlayPermissionSettings()` -> queries `Settings.canDrawOverlays()` directly and deep-links to Learnese's Android "Display over other apps" settings screen.
   - `consumeOpenActiveSession()` & native-to-Dart `onOpenActiveSession` -> routes notification taps to the active session screen on both cold launch and warm resume.
 - **State Stream (`EventChannel`: `com.learnese.app/recorder_events`)**:
   - Kotlin pushes `{sessionState, bufferedMs, bufferSeconds, lastSavedClipPath?, lastSavedClipDurationMs?, lastSavedClipSizeBytes?, error?, errorMessage?}` via `RecordingSessionBus` on the main looper.

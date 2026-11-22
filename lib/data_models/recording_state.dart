@@ -21,6 +21,7 @@ enum CaptureError {
   projectionDenied('projection_denied'),
   projectionRevoked('projection_revoked'),
   permissionDenied('permission_denied'),
+  overlayPermissionDenied('overlay_permission_denied'),
   audioInitFailed('audio_init_failed'),
   encodingFailed('encoding_failed'),
   storageError('storage_error'),

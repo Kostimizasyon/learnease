@@ -149,6 +149,22 @@ class RecorderChannel {
     return pending ?? false;
   }
 
+  /// Queries Android's Settings.canDrawOverlays() directly.
+  Future<bool> hasOverlayPermission() async {
+    final granted = await _methodChannel.invokeMethod<bool>(
+      'hasOverlayPermission',
+    );
+    return granted ?? false;
+  }
+
+  /// Opens Android's "Display over other apps" settings screen directly for Learnese.
+  Future<bool> openOverlayPermissionSettings() async {
+    final opened = await _methodChannel.invokeMethod<bool>(
+      'openOverlayPermissionSettings',
+    );
+    return opened ?? false;
+  }
+
   Future<Object?> _handleNativeCall(MethodCall call) async {
     if (call.method == 'onOpenActiveSession' &&
         !_openActiveSessionController.isClosed) {

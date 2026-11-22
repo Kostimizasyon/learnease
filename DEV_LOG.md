@@ -69,3 +69,17 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 ### Problems Hit (Chunk 3)
 - `permission_handler_android` (`14.1.1`) required `compileSdk >= 37` while Flutter's default was `36`. Updated `compileSdk = 37` in `android/app/build.gradle.kts` (`android-37.0` SDK is installed locally).
 - `finalizeStop` lambda in `RecordingService.kt` inferred `() -> Boolean` from `Handler.post`; annotated explicitly as `() -> Unit`.
+
+---
+
+## 2026-11-22 — Chunk 4: Overlay Button
+
+### Decisions Made
+- **Pure Kotlin geometry extraction (`OverlayGeometry.kt`)**: Adjusted Section 5 layout slightly by extracting edge-snap, vertical inset clamping, dismiss-zone hit detection, tap-slop detection, and `TapDebouncer` (250ms debounce) into `OverlayGeometry.kt` (zero Android imports) so all overlay physics and debounce behavior are verified via JUnit (`OverlayGeometryTest.kt`).
+- **Strict overlay = session lifetime**: Both `MainActivity.handleStartSessionCall` and `RecordingService.handleStartSession` enforce `Settings.canDrawOverlays`, so a session cannot run headless without the floating button. Dropping the 52dp bubble onto the bottom X dismiss target immediately hides the overlay and routes through `RecordingService.stopSessionInternal()` (identical to notification Stop and in-app Stop), flushing any in-flight `.wav` write before terminating the service.
+- **Rotation resilience & foreground-service ordering**: `RecordingService.onConfigurationChanged` calls `overlayController.reclampToScreen()` so landscape/portrait rotations keep the bubble snapped on-screen. The service-side `canDrawOverlays` defense-in-depth check runs *after* `ServiceCompat.startForeground()` to prevent `ForegroundServiceDidNotStartInTimeException` on Android 12+.
+- **Direct overlay settings flow**: Added `hasOverlayPermission` / `openOverlayPermissionSettings` (`ACTION_MANAGE_OVERLAY_PERMISSION` targeting `package:com.learnese.app`) to `MainActivity` + `RecorderChannel`, and built `PermissionGate` (`PermissionGate.sessionSetup()`, `PermissionGate.overlayOnly()`) with `WidgetsBindingObserver` resume refresh.
+
+### Alternatives Rejected
+- **Using a Flutter overlay engine plugin**: Rejected per spec to avoid a second Flutter engine's memory overhead and keep overlay lifetime locked to `RecordingService`.
+- **Generic `openAppSettings()` for overlay permission**: Rejected in favor of Android's direct `ACTION_MANAGE_OVERLAY_PERMISSION` deep link so users land directly on Learnese's overlay toggle.

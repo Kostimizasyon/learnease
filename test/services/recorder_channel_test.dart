@@ -93,33 +93,34 @@ void main() {
       );
     });
 
-    test(
-      'stopSession, getState, and consumeOpenActiveSession invoke methods',
-      () async {
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-            .setMockMethodCallHandler(methodChannel, (MethodCall call) async {
-              recordedCalls.add(call);
-              return switch (call.method) {
-                'stopSession' => true,
-                'consumeOpenActiveSession' => true,
-                'getState' => <String, Object?>{
-                  'sessionState': 'active',
-                  'bufferedMs': 9000,
-                  'bufferSeconds': 30,
-                  'error': 'none',
-                },
-                _ => null,
-              };
-            });
+    test('stopSession, getState, consumeOpenActiveSession, and overlay methods invoke native', () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(methodChannel, (MethodCall call) async {
+            recordedCalls.add(call);
+            return switch (call.method) {
+              'stopSession' => true,
+              'consumeOpenActiveSession' => true,
+              'hasOverlayPermission' => true,
+              'openOverlayPermissionSettings' => true,
+              'getState' => <String, Object?>{
+                'sessionState': 'active',
+                'bufferedMs': 9000,
+                'bufferSeconds': 30,
+                'error': 'none',
+              },
+              _ => null,
+            };
+          });
 
-        expect(await recorderChannel.stopSession(), isTrue);
-        expect(await recorderChannel.consumeOpenActiveSession(), isTrue);
-        final state = await recorderChannel.getState();
-        expect(state.isActive, isTrue);
-        expect(state.bufferedMs, 9000);
-        expect(state.bufferSeconds, 30);
-      },
-    );
+      expect(await recorderChannel.stopSession(), isTrue);
+      expect(await recorderChannel.consumeOpenActiveSession(), isTrue);
+      expect(await recorderChannel.hasOverlayPermission(), isTrue);
+      expect(await recorderChannel.openOverlayPermissionSettings(), isTrue);
+      final state = await recorderChannel.getState();
+      expect(state.isActive, isTrue);
+      expect(state.bufferedMs, 9000);
+      expect(state.bufferSeconds, 30);
+    });
 
     test(
       'stateStream decodes EventChannel payloads into RecordingState',

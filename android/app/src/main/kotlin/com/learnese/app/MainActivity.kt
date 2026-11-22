@@ -5,7 +5,9 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.projection.MediaProjectionManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -79,7 +81,22 @@ class MainActivity : FlutterActivity() {
             "consumeOpenActiveSession" -> result.success(
                 RecordingSessionBus.consumeOpenActiveSession(),
             )
+            "hasOverlayPermission" -> result.success(Settings.canDrawOverlays(this))
+            "openOverlayPermissionSettings" -> handleOpenOverlaySettings(result)
             else -> result.notImplemented()
+        }
+    }
+
+    private fun handleOpenOverlaySettings(result: MethodChannel.Result) {
+        val intent = Intent(
+            Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            Uri.parse("package:$packageName"),
+        )
+        try {
+            startActivity(intent)
+            result.success(true)
+        } catch (_: Throwable) {
+            result.success(false)
         }
     }
 
@@ -104,6 +121,15 @@ class MainActivity : FlutterActivity() {
             result.error(
                 "permission_denied",
                 "RECORD_AUDIO permission is required for AudioPlaybackCapture.",
+                null,
+            )
+            return
+        }
+
+        if (!Settings.canDrawOverlays(this)) {
+            result.error(
+                "overlay_permission_denied",
+                "Display over other apps permission is required for the floating save button.",
                 null,
             )
             return

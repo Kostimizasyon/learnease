@@ -20,12 +20,18 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `android/app/src/main/AndroidManifest.xml` — Declares the 5 required permissions (`RECORD_AUDIO`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PROJECTION`, `POST_NOTIFICATIONS`, `SYSTEM_ALERT_WINDOW`) and `RecordingService` (`foregroundServiceType="mediaProjection"`, `exported="false"`).
 - `android/app/src/main/res/values/colors.xml` — Native color tokens mirroring `lib/theme/app_colors.dart` for the overlay and notification.
 - `android/app/src/main/res/drawable/ic_stat_learnese.xml` — Monochrome waveform status-bar icon for the ongoing recording notification.
-- `android/app/src/main/kotlin/com/learnese/app/MainActivity.kt` — Registers `MethodChannel`/`EventChannel`, runs per-session `MediaProjection` consent, delegates commands to `RecordingService`, and forwards notification tap deep links.
-- `android/app/src/main/kotlin/com/learnese/app/RecordingService.kt` — Foreground service owning `MediaProjection`, `AudioCaptureEngine`, ongoing notification, and `RecordingSessionBus`.
+- `android/app/src/main/res/drawable/ic_overlay_save.xml` — Replay-capture vector icon for the floating overlay button.
+- `android/app/src/main/res/drawable/ic_overlay_check.xml` — Brief checkmark vector icon shown on the overlay after a clip saves.
+- `android/app/src/main/res/drawable/ic_overlay_dismiss.xml` — Close (`X`) vector icon for the drag-to-dismiss target.
+- `android/app/src/main/kotlin/com/learnese/app/MainActivity.kt` — Registers `MethodChannel`/`EventChannel`, checks audio + overlay permissions, opens Android's overlay settings, runs per-session `MediaProjection` consent, and forwards notification tap deep links.
+- `android/app/src/main/kotlin/com/learnese/app/RecordingService.kt` — Foreground service owning `MediaProjection`, `AudioCaptureEngine`, `OverlayController`, ongoing notification, and `RecordingSessionBus`.
+- `android/app/src/main/kotlin/com/learnese/app/OverlayController.kt` — Native `TYPE_APPLICATION_OVERLAY` 52dp floating button (draggable, edge-snapping, pulsing recording dot, debounced tap-to-save with teal check flash, bottom X dismiss target ending the session, rotation re-clamping).
+- `android/app/src/main/kotlin/com/learnese/app/OverlayGeometry.kt` — Pure JVM overlay edge-snap, Y-clamp, dismiss-zone hit test, tap-slop check, and `TapDebouncer` for JUnit testing.
 - `android/app/src/main/kotlin/com/learnese/app/AudioCaptureEngine.kt` — `AudioPlaybackCaptureConfiguration` + `AudioRecord` (internal playback only, never mic) feeding `AudioRingBuffer` and flushing `.wav` snapshots on a background thread.
 - `android/app/src/main/kotlin/com/learnese/app/AudioRingBuffer.kt` — Pure JVM classes (`AudioFormatSpec`, `AudioRingBuffer`, `WavWriter`, `ClipFileNamer`) kept free of Android SDK imports for JUnit testing.
 - `android/app/src/main/kotlin/com/learnese/app/NotificationFactory.kt` — Low-importance notification channel, ongoing notification builder, active-session tap intent, and Stop Session action.
 - `android/app/src/test/kotlin/com/learnese/app/AudioRingBufferTest.kt` — JUnit tests for ring-buffer wrap-around/partial-fill/clear, 44-byte RIFF/WAVE header generation, and collision-safe clip naming.
+- `android/app/src/test/kotlin/com/learnese/app/OverlayGeometryTest.kt` — JUnit tests for edge snapping, Y-inset clamping, dismiss hit area, tap vs drag detection, and `TapDebouncer`.
 
 ### Flutter App (`lib/`)
 - `lib/main.dart` — App entry point (`LearneseApp`) wired to light/dark themes and a temporary bootstrap shell.
@@ -40,8 +46,9 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `lib/services/folder_repository.dart` — CRUD for `Folder`, alphabetical listing, breadcrumb ancestor resolution, and cycle-safe folder moves.
 - `lib/services/storage_service.dart` — App-specific `.wav` clip paths (`clips/session_<id>/clip_<ts>.wav`), size queries, and file/directory deletion.
 - `lib/services/preferences_service.dart` — `SharedPreferences` wrapper for last buffer length (`1..180s`) and onboarding hint flags.
-- `lib/services/recorder_channel.dart` — `MethodChannel`/`EventChannel` wrapper (`startSession`, `saveClip`, `stopSession`, `getState`, `stateStream`, notification deep-link hooks).
+- `lib/services/recorder_channel.dart` — `MethodChannel`/`EventChannel` wrapper (`startSession`, `saveClip`, `stopSession`, `getState`, `hasOverlayPermission`, `openOverlayPermissionSettings`, `stateStream`, notification deep-link hooks).
 - `lib/services/permission_service.dart` — Testable runtime permission wrapper (`RECORD_AUDIO`, `POST_NOTIFICATIONS`, `SYSTEM_ALERT_WINDOW`) with `PermissionGateway`.
+- `lib/pages/util/permission_gate.dart` — Reusable permission setup widget (`PermissionGate.sessionSetup()`, `PermissionGate.overlayOnly()`) with lifecycle-resume re-check after returning from Android overlay Settings.
 
 ### Tests (`test/`)
 - `test/data_models/recording_session_test.dart` — Unit tests for `RecordingSession`.
@@ -56,6 +63,7 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `test/services/preferences_service_test.dart` — Unit tests for `PreferencesService` with mock `SharedPreferences`.
 - `test/services/recorder_channel_test.dart` — Mocked `MethodChannel`/`EventChannel` tests for `RecorderChannel`.
 - `test/services/permission_service_test.dart` — `mocktail` tests for `PermissionService`.
+- `test/pages/util/permission_gate_test.dart` — Widget tests for `PermissionGate` permission flow and lifecycle-resume refresh.
 - `test/widget_test.dart` — Widget test verifying `LearneseApp` bootstrap and theme setup.
 
 ## Chunk Status
@@ -63,7 +71,7 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - [x] **Chunk 1**: Repo, Project Setup, Theme, Models & Docs
 - [x] **Chunk 2**: Database, Repositories & Storage
 - [x] **Chunk 3**: Native Recording Core
-- [ ] **Chunk 4**: Overlay Button
+- [x] **Chunk 4**: Overlay Button
 - [ ] **Chunk 5**: Home Flow & Active Session UI
 - [ ] **Chunk 6**: Library, Rename, Folders & Playback
 - [ ] **Chunk 7**: App Icon, Polish & Release Readiness

@@ -54,19 +54,29 @@ void main() {
       expect(roundTripped, minimal);
     });
 
-    test('fromMap clamps negative values and maps unknown errors safely', () {
-      final parsed = RecordingState.fromMap(<Object?, Object?>{
-        'sessionState': 'unexpected_value',
-        'bufferedMs': -500,
-        'bufferSeconds': -10,
-        'error': 'some_future_error',
-      });
+    test(
+      'fromMap clamps negative values and maps known/unknown errors safely',
+      () {
+        final overlayError = RecordingState.fromMap(<Object?, Object?>{
+          'sessionState': 'idle',
+          'bufferedMs': 0,
+          'error': 'overlay_permission_denied',
+        });
+        expect(overlayError.error, CaptureError.overlayPermissionDenied);
 
-      expect(parsed.sessionState, SessionStatus.idle);
-      expect(parsed.bufferedMs, 0);
-      expect(parsed.bufferSeconds, 0);
-      expect(parsed.error, CaptureError.unknown);
-    });
+        final parsed = RecordingState.fromMap(<Object?, Object?>{
+          'sessionState': 'unexpected_value',
+          'bufferedMs': -500,
+          'bufferSeconds': -10,
+          'error': 'some_future_error',
+        });
+
+        expect(parsed.sessionState, SessionStatus.idle);
+        expect(parsed.bufferedMs, 0);
+        expect(parsed.bufferSeconds, 0);
+        expect(parsed.error, CaptureError.unknown);
+      },
+    );
 
     test('copyWith clears saved clip and error cleanly', () {
       const initial = RecordingState(
