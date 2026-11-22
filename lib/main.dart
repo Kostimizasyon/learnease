@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'pages/home_page/home_page.dart';
-import 'pages/util/custom_app_bar.dart';
+import 'pages/library_page/library_page.dart';
+import 'pages/library_page/player_sheet.dart';
 import 'services/database_helper.dart';
+import 'services/folder_repository.dart';
+import 'services/library_controller.dart';
 import 'services/permission_service.dart';
 import 'services/preferences_service.dart';
 import 'services/recorder_channel.dart';
@@ -17,10 +20,18 @@ void main() {
 }
 
 class LearneseApp extends StatefulWidget {
-  const LearneseApp({super.key, this.sessionController, this.libraryBuilder});
+  const LearneseApp({
+    super.key,
+    this.sessionController,
+    this.libraryController,
+    this.libraryBuilder,
+    this.playerFactory,
+  });
 
   final SessionController? sessionController;
+  final LibraryController? libraryController;
   final WidgetBuilder? libraryBuilder;
+  final ClipPlayerFactory? playerFactory;
 
   @override
   State<LearneseApp> createState() => _LearneseAppState();
@@ -28,7 +39,9 @@ class LearneseApp extends StatefulWidget {
 
 class _LearneseAppState extends State<LearneseApp> {
   late final SessionController _sessionController;
-  late final bool _ownsController;
+  LibraryController? _libraryController;
+  late final bool _ownsSessionController;
+  bool _ownsLibraryController = false;
   DatabaseHelper? _databaseHelper;
   RecorderChannel? _recorderChannel;
   int _currentTab = 0;
@@ -36,27 +49,43 @@ class _LearneseAppState extends State<LearneseApp> {
   @override
   void initState() {
     super.initState();
-    final provided = widget.sessionController;
-    if (provided != null) {
-      _sessionController = provided;
-      _ownsController = false;
+    final providedSession = widget.sessionController;
+    final providedLibrary = widget.libraryController;
+
+    if (providedSession != null) {
+      _sessionController = providedSession;
+      _ownsSessionController = false;
+      _libraryController = providedLibrary;
     } else {
       final dbHelper = DatabaseHelper();
       final storage = StorageService();
       final recorder = RecorderChannel();
+      final sessionRepo = SessionRepository(
+        databaseHelper: dbHelper,
+        storageService: storage,
+      );
+      final folderRepo = FolderRepository(databaseHelper: dbHelper);
       _databaseHelper = dbHelper;
       _recorderChannel = recorder;
       _sessionController = SessionController(
         recorderChannel: recorder,
-        sessionRepository: SessionRepository(
-          databaseHelper: dbHelper,
-          storageService: storage,
-        ),
+        sessionRepository: sessionRepo,
         storageService: storage,
         preferencesService: PreferencesService(),
         permissionService: PermissionService(),
       );
-      _ownsController = true;
+      _ownsSessionController = true;
+
+      if (providedLibrary != null) {
+        _libraryController = providedLibrary;
+      } else {
+        _libraryController = LibraryController(
+          sessionRepository: sessionRepo,
+          folderRepository: folderRepo,
+          sessionController: _sessionController,
+        );
+        _ownsLibraryController = true;
+      }
     }
 
     _sessionController.onNavigateToActiveSession = _openActiveSessionTab;
@@ -72,6 +101,7 @@ class _LearneseAppState extends State<LearneseApp> {
 
   void _openLibraryTab() {
     if (!mounted) return;
+    _libraryController?.load();
     if (_currentTab != 1) {
       setState(() => _currentTab = 1);
     }
@@ -79,7 +109,10 @@ class _LearneseAppState extends State<LearneseApp> {
 
   @override
   void dispose() {
-    if (_ownsController) {
+    if (_ownsLibraryController) {
+      _libraryController?.dispose();
+    }
+    if (_ownsSessionController) {
       _sessionController.dispose();
       _recorderChannel?.dispose();
       _databaseHelper?.close();
@@ -89,6 +122,15 @@ class _LearneseAppState extends State<LearneseApp> {
 
   @override
   Widget build(BuildContext context) {
+    final libraryPage =
+        widget.libraryBuilder?.call(context) ??
+        (_libraryController != null
+            ? LibraryPage(
+                controller: _libraryController!,
+                playerFactory: widget.playerFactory,
+              )
+            : const SizedBox.shrink());
+
     return MaterialApp(
       title: 'Learnese',
       debugShowCheckedModeBanner: false,
@@ -103,8 +145,7 @@ class _LearneseAppState extends State<LearneseApp> {
               controller: _sessionController,
               onOpenLibrary: _openLibraryTab,
             ),
-            widget.libraryBuilder?.call(context) ??
-                const _LibraryPlaceholderPage(),
+            libraryPage,
           ],
         ),
         bottomNavigationBar: ListenableBuilder(
@@ -113,6 +154,9 @@ class _LearneseAppState extends State<LearneseApp> {
             return NavigationBar(
               selectedIndex: _currentTab,
               onDestinationSelected: (int index) {
+                if (index == 1) {
+                  _libraryController?.load();
+                }
                 setState(() => _currentTab = index);
               },
               destinations: <NavigationDestination>[
@@ -134,31 +178,6 @@ class _LearneseAppState extends State<LearneseApp> {
               ],
             );
           },
-        ),
-      ),
-    );
-  }
-}
-
-// TODO(chunk-6): Replace placeholder with LibraryPage (sessions, folders, playback).
-class _LibraryPlaceholderPage extends StatelessWidget {
-  const _LibraryPlaceholderPage();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: const CustomAppBar.standard(title: 'Library'),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(
-            'Saved sessions and clips will appear here.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
         ),
       ),
     );

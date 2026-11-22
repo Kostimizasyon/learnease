@@ -49,12 +49,19 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `lib/services/recorder_channel.dart` — `MethodChannel`/`EventChannel` wrapper (`startSession`, `saveClip`, `stopSession`, `getState`, `hasOverlayPermission`, `openOverlayPermissionSettings`, `stateStream`, notification deep-link hooks).
 - `lib/services/permission_service.dart` — Testable runtime permission wrapper (`RECORD_AUDIO`, `POST_NOTIFICATIONS`, `SYSTEM_ALERT_WINDOW`) with `PermissionGateway`.
 - `lib/services/session_controller.dart` — `ChangeNotifier` orchestrating session start/stop, native event stream ingestion, clip DB persistence with deduplication, stale-session reconciliation, and notification deep-link callbacks.
+- `lib/services/library_controller.dart` — `ChangeNotifier` coordinating folder browsing, breadcrumbs, cycle-safe move targets, session/clip/folder CRUD, and live refresh on session changes.
+- `lib/pages/util/app_dialog.dart` — Reusable dialogs with semantic named constructors (`AppDialog.rename()`, `AppDialog.createFolder()`, `AppDialog.confirmDelete()`, `AppDialog.pickFolder()`).
 - `lib/pages/util/custom_app_bar.dart` — `CustomAppBar.standard()` and `CustomAppBar.recording()` with live recording dot indicator.
 - `lib/pages/util/permission_gate.dart` — Reusable permission setup widget (`PermissionGate.sessionSetup()`, `PermissionGate.overlayOnly()`) with lifecycle-resume re-check after returning from Android overlay Settings.
 - `lib/pages/home_page/util/buffer_length_picker.dart` — `BufferLengthChip.preset()`, `BufferLengthChip.custom()`, and `BufferLengthPicker` (15/30/60/120s + custom 1–180s dialog + RAM estimate).
 - `lib/pages/home_page/util/record_button.dart` — `RecordButton.start()` and `RecordButton.stop()`.
 - `lib/pages/home_page/home_page.dart` — Idle recording setup screen (buffer length picker, Record Now, permission gate dialog, honest playback capture disclosure) transitioning seamlessly to `ActiveSessionPage`.
 - `lib/pages/home_page/active_session_page.dart` — Live recording session screen (buffer length X badge, rolling fill bar, clip count, Save Now, Stop Session, Open Library).
+- `lib/pages/library_page/util/folder_tile.dart` — `FolderTile.root()` and `FolderTile.nested()` with rename/move/delete actions.
+- `lib/pages/library_page/util/session_tile.dart` — Expandable `SessionTile.active()` and `SessionTile.completed()` grouping clips by session.
+- `lib/pages/library_page/util/clip_tile.dart` — `ClipTile.standard()` and `ClipTile.compact()` with duration/size formatting, play trigger, and rename/delete menu.
+- `lib/pages/library_page/player_sheet.dart` — Bottom-sheet audio player (`just_audio` behind testable `ClipAudioPlayer`) with play/pause, seek slider, ±5s skip, and missing-file error handling.
+- `lib/pages/library_page/library_page.dart` — Sessions & folders browser with breadcrumb navigation, create/rename/move/delete flows, and clip playback.
 
 ### Tests (`test/`)
 - `test/data_models/recording_session_test.dart` — Unit tests for `RecordingSession`.
@@ -70,9 +77,12 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `test/services/recorder_channel_test.dart` — Mocked `MethodChannel`/`EventChannel` tests for `RecorderChannel`.
 - `test/services/permission_service_test.dart` — `mocktail` tests for `PermissionService`.
 - `test/services/session_controller_test.dart` — Unit tests for `SessionController` lifecycle, clip persistence/dedup, consent cancellation rollback, and orphan reconciliation.
+- `test/services/library_controller_test.dart` — `sqflite_common_ffi` repository-integration tests for `LibraryController` nested folders, breadcrumbs, moves, renames, and disk-cleaning deletes.
 - `test/pages/util/permission_gate_test.dart` — Widget tests for `PermissionGate` permission flow and lifecycle-resume refresh.
 - `test/pages/home_page/buffer_length_picker_test.dart` — Widget tests for preset chips and custom 1–180s validation dialog.
 - `test/pages/home_page/home_and_active_session_test.dart` — End-to-end widget test for Home -> ActiveSession transitions, clip count updates, notification tap routing, and Stop Session.
+- `test/pages/library_page/library_page_test.dart` — Widget tests for Library browsing, folder creation, breadcrumbs, rename/move/delete dialogs, and playback sheet trigger.
+- `test/pages/library_page/player_sheet_test.dart` — Widget tests for `PlayerSheet` play/pause, seek/skip controls, and missing-file error UI.
 - `test/widget_test.dart` — Widget test verifying `LearneseApp` theme and navigation wiring.
 
 ## Chunk Status
@@ -82,5 +92,5 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - [x] **Chunk 3**: Native Recording Core
 - [x] **Chunk 4**: Overlay Button
 - [x] **Chunk 5**: Home Flow & Active Session UI
-- [ ] **Chunk 6**: Library, Rename, Folders & Playback
+- [x] **Chunk 6**: Library, Rename, Folders & Playback
 - [ ] **Chunk 7**: App Icon, Polish & Release Readiness

@@ -94,3 +94,13 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 - **Consent rollback & orphan reconciliation**: Cancelling `MediaProjection` deletes the newly created empty DB session row so cancelled attempts never clutter the Library. On startup, if SQLite has an un-ended session while native reports `idle`, `initialize()` automatically closes it.
 - **Tab-driven Active Session routing**: `HomePage` renders `ActiveSessionPage` directly whenever `controller.isSessionActive` is true, so notification taps (`onOpenActiveSession` / `consumeOpenActiveSession`) simply switch the root `NavigationBar` to tab `0` with zero stale navigator stack edge cases.
 - **In-app honesty**: Added a concise disclosure card on `HomePage` explaining output-only capture, RAM-only buffer, continuous battery/RAM cost & Android indicator, and third-party app opt-outs / DRM silence.
+
+---
+
+## 2026-11-22 — Chunk 6: Library, Rename, Folders & Playback
+
+### Decisions Made
+- **Added `lib/services/library_controller.dart`**: Mirrors `SessionController`'s thin `ChangeNotifier` pattern (adjusted Section 5 layout and logged in `project-structure.md`), keeping SQLite orchestration, breadcrumb state, descendant-exclusion math for moves, and automatic refresh-on-clip-save cleanly testable via `sqflite_common_ffi`.
+- **`ClipAudioPlayer` abstraction for `just_audio`**: `PlayerSheet` delegates to `JustAudioClipPlayer` by default and accepts an optional `ClipPlayerFactory` so widget tests verify play/pause, seek/skip, and missing-file errors without requiring Android ExoPlayer.
+- **`FolderMoveSelection` wrapper in `AppDialog.pickFolder`**: Distinguishes selecting "Library (Root)" (`FolderMoveSelection.root()`) from cancelling the dialog (`null`) cleanly without sentinel integers.
+- **Stateful text-input dialogs**: `_TextInputDialog` owns and disposes its `TextEditingController` in `State.dispose()` so closing dialogs never hits Flutter's exit-animation controller-disposed race.

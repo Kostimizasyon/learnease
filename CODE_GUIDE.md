@@ -48,6 +48,11 @@ All timestamps (`started_at`, `ended_at`, `created_at`) are persisted as **Unix 
 - If `MediaProjection` consent is cancelled, `SessionController.startSession()` rolls back the empty DB session row immediately.
 - Tapping the ongoing Android notification sets tab index `0` via `onNavigateToActiveSession` (both warm resume and cold launch via `consumeOpenActiveSession()`), landing directly on `ActiveSessionPage`.
 
+### Library & Playback (`LibraryController`, `LibraryPage`, `PlayerSheet`)
+- `lib/services/library_controller.dart` (`ChangeNotifier`) coordinates `SessionRepository` + `FolderRepository` and listens to `SessionController` so newly saved clips and started/ended sessions appear in the Library automatically.
+- `LibraryPage` displays folders above sessions (ordered newest-first), shows an interactive breadcrumb bar when inside sub-folders, and uses `AppDialog` (`rename`, `createFolder`, `confirmDelete`, `pickFolder`) for all organization actions.
+- `PlayerSheet` wraps `just_audio`'s `AudioPlayer` behind `ClipAudioPlayer` (`JustAudioClipPlayer`), providing play/pause, seek slider, ±5s skip, auto-rewind after completion, and widget-testable playback control.
+
 ### Storage Layout (`StorageService`)
 - Saved `.wav` clips live in app-specific documents storage under `clips/session_<sessionId>/clip_<epochMs>.wav` (with numeric collision suffix if multiple saves land in the same millisecond).
 - Dart passes the resolved session directory path to Kotlin when starting a session so both layers always write to and clean up the exact same directory (avoiding Android's `app_flutter/` vs `files/` mismatch).

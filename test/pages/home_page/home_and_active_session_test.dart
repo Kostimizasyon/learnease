@@ -106,7 +106,12 @@ void main() {
     testWidgets(
       'transitions Home -> ActiveSession, increments clip count, routes notification tap, and stops back to Home',
       (WidgetTester tester) async {
-        await tester.pumpWidget(LearneseApp(sessionController: controller));
+        await tester.pumpWidget(
+          LearneseApp(
+            sessionController: controller,
+            libraryBuilder: (_) => const Center(child: Text('Library View')),
+          ),
+        );
         await tester.pumpAndSettle();
 
         // Idle home screen with disclosure notes & Record Now.
@@ -153,10 +158,7 @@ void main() {
         // Open Library tab, then simulate notification tap routing back to Active Session.
         await tester.tap(find.text('Open Library'));
         await tester.pumpAndSettle();
-        expect(
-          find.text('Saved sessions and clips will appear here.'),
-          findsOneWidget,
-        );
+        expect(find.text('Library View'), findsOneWidget);
 
         openSessionController.add(null);
         await tester.runAsync(() => pumpEventQueue());
