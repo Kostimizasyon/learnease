@@ -49,5 +49,54 @@ void main() {
       expect(reopened.isOpen, isTrue);
       expect(identical(first, reopened), isFalse);
     });
+
+    test(
+      'deduplicates concurrent open calls into one database instance',
+      () async {
+        final results = await Future.wait<Database>(<Future<Database>>[
+          dbHelper.database,
+          dbHelper.database,
+          dbHelper.database,
+        ]);
+
+        expect(identical(results[0], results[1]), isTrue);
+        expect(identical(results[1], results[2]), isTrue);
+      },
+    );
+
+    test('enforces SQLite CHECK constraints on sessions and clips', () async {
+      final db = await dbHelper.database;
+      final nowMs = DateTime(2026, 4, 1).millisecondsSinceEpoch;
+
+      await expectLater(
+        db.insert(DatabaseHelper.sessionsTable, <String, Object?>{
+          'name': 'Bad Buffer',
+          'started_at': nowMs,
+          'buffer_seconds': 0,
+        }),
+        throwsA(isA<DatabaseException>()),
+      );
+
+      final sessionId = await db.insert(
+        DatabaseHelper.sessionsTable,
+        <String, Object?>{
+          'name': 'Valid',
+          'started_at': nowMs,
+          'buffer_seconds': 30,
+        },
+      );
+
+      await expectLater(
+        db.insert(DatabaseHelper.clipsTable, <String, Object?>{
+          'session_id': sessionId,
+          'name': 'Negative Duration',
+          'file_path': '/tmp/x.wav',
+          'duration_ms': -1,
+          'size_bytes': 100,
+          'created_at': nowMs,
+        }),
+        throwsA(isA<DatabaseException>()),
+      );
+    });
   });
 }

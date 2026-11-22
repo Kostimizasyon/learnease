@@ -40,6 +40,7 @@ All timestamps (`started_at`, `ended_at`, `created_at`) are persisted as **Unix 
 
 ### Storage Layout (`StorageService`)
 - Saved `.wav` clips live in app-specific documents storage under `clips/session_<sessionId>/clip_<epochMs>.wav` (with numeric collision suffix if multiple saves land in the same millisecond).
+- Dart passes the resolved session directory path to Kotlin when starting a session so both layers always write to and clean up the exact same directory (avoiding Android's `app_flutter/` vs `files/` mismatch).
 - `SessionRepository.deleteClip()` and `SessionRepository.deleteSession()` delete both the SQLite rows and the corresponding `.wav` files/session directory via `StorageService`.
 
 ## Theme & Color System

@@ -97,26 +97,52 @@ void main() {
       },
     );
 
+    test('deleting parent folder cascades 3-level sub-folders and unfiles sessions', () async {
+      final root = await folderRepo.createFolder(Folder.root(name: 'Root'));
+      final child = await folderRepo.createFolder(
+        Folder.nested(name: 'Child', parentId: root.id!),
+      );
+      final grandchild = await folderRepo.createFolder(
+        Folder.nested(name: 'Grandchild', parentId: child.id!),
+      );
+
+      final sessionInChild = await sessionRepo.createSession(
+        RecordingSession.create(bufferSeconds: 30, folderId: child.id),
+      );
+      final sessionInGrandchild = await sessionRepo.createSession(
+        RecordingSession.create(bufferSeconds: 60, folderId: grandchild.id),
+      );
+
+      await folderRepo.deleteFolder(root.id!);
+
+      expect(await folderRepo.getFolder(root.id!), isNull);
+      expect(await folderRepo.getFolder(child.id!), isNull);
+      expect(await folderRepo.getFolder(grandchild.id!), isNull);
+
+      expect(
+        (await sessionRepo.getSession(sessionInChild.id!))?.folderId,
+        isNull,
+      );
+      expect(
+        (await sessionRepo.getSession(sessionInGrandchild.id!))?.folderId,
+        isNull,
+      );
+    });
+
     test(
-      'deleting parent folder cascades sub-folders and unfiles sessions',
+      'rejects conflicting list filters and non-existent parent FK',
       () async {
-        final root = await folderRepo.createFolder(Folder.root(name: 'Root'));
-        final sub = await folderRepo.createFolder(
-          Folder.nested(name: 'Sub', parentId: root.id!),
+        await expectLater(
+          folderRepo.listFolders(parentId: 1, rootOnly: true),
+          throwsArgumentError,
         );
 
-        final sessionInSub = await sessionRepo.createSession(
-          RecordingSession.create(bufferSeconds: 30, folderId: sub.id),
+        await expectLater(
+          folderRepo.createFolder(
+            Folder.nested(name: 'Orphan', parentId: 9999),
+          ),
+          throwsA(isA<DatabaseException>()),
         );
-
-        await folderRepo.deleteFolder(root.id!);
-
-        expect(await folderRepo.getFolder(root.id!), isNull);
-        expect(await folderRepo.getFolder(sub.id!), isNull);
-
-        final unfiledSession = await sessionRepo.getSession(sessionInSub.id!);
-        expect(unfiledSession, isNotNull);
-        expect(unfiledSession!.folderId, isNull);
       },
     );
   });

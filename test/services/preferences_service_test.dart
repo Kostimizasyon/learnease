@@ -34,6 +34,15 @@ void main() {
           RecordingSession.maxBufferSeconds,
         );
 
+        SharedPreferences.setMockInitialValues(<String, Object>{
+          PreferencesService.lastBufferSecondsKey: -5,
+        });
+        final lowService = PreferencesService();
+        expect(
+          await lowService.getLastBufferSeconds(),
+          RecordingSession.minBufferSeconds,
+        );
+
         await expectLater(service.setLastBufferSeconds(0), throwsRangeError);
         await expectLater(
           service.setLastBufferSeconds(RecordingSession.maxBufferSeconds + 1),

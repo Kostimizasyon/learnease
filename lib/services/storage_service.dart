@@ -53,6 +53,9 @@ class StorageService {
   }
 
   Future<int> fileSizeBytes(String filePath) async {
+    if (filePath.trim().isEmpty) {
+      return 0;
+    }
     final file = File(filePath);
     if (!await file.exists()) {
       return 0;
@@ -68,8 +71,12 @@ class StorageService {
     if (!await file.exists()) {
       return false;
     }
-    await file.delete();
-    return true;
+    try {
+      await file.delete();
+      return true;
+    } on PathNotFoundException {
+      return false;
+    }
   }
 
   Future<int> deleteFiles(Iterable<String> filePaths) async {
@@ -88,8 +95,12 @@ class StorageService {
     if (!await sessionDir.exists()) {
       return false;
     }
-    await sessionDir.delete(recursive: true);
-    return true;
+    try {
+      await sessionDir.delete(recursive: true);
+      return true;
+    } on PathNotFoundException {
+      return false;
+    }
   }
 
   Future<int> totalClipsStorageBytes() async {

@@ -161,6 +161,12 @@ void main() {
         final ordered = await sessionRepo.listClipsForSession(session.id!);
         expect(ordered.map((c) => c.id), <int?>[c1.id, c2.id]);
 
+        final newestFirst = await sessionRepo.listClipsForSession(
+          session.id!,
+          newestFirst: true,
+        );
+        expect(newestFirst.map((c) => c.id), <int?>[c2.id, c1.id]);
+
         await sessionRepo.renameClip(c1.id!, 'Important Line');
         expect((await sessionRepo.getClip(c1.id!))?.name, 'Important Line');
 
@@ -171,32 +177,64 @@ void main() {
       },
     );
 
-    test('deleteSession cascades clips in DB and removes clip files on disk', () async {
+    test(
+      'deleteSession cascades clips in DB and removes clip files on disk',
+      () async {
+        final session = await sessionRepo.createSession(
+          RecordingSession.create(bufferSeconds: 30),
+        );
+        final clipPath = await storageService.nextClipFilePath(
+          sessionId: session.id!,
+        );
+        await File(clipPath).writeAsBytes(<int>[10, 20, 30]);
+
+        final clip = await sessionRepo.addClip(
+          AudioClip.create(
+            sessionId: session.id!,
+            filePath: clipPath,
+            durationMs: 5000,
+            sizeBytes: 3,
+          ),
+        );
+
+        final sessionDirPath = (await storageService.getSessionDirectory(
+          session.id!,
+        )).path;
+
+        await sessionRepo.deleteSession(session.id!);
+
+        expect(await sessionRepo.getSession(session.id!), isNull);
+        expect(await sessionRepo.getClip(clip.id!), isNull);
+        expect(await File(clipPath).exists(), isFalse);
+        expect(await Directory(sessionDirPath).exists(), isFalse);
+      },
+    );
+
+    test('rejects conflicting filters and foreign-key violations', () async {
+      await expectLater(
+        sessionRepo.listSessions(folderId: 1, rootOnly: true),
+        throwsArgumentError,
+      );
+
+      await expectLater(
+        sessionRepo.addClip(
+          AudioClip.create(
+            sessionId: 9999,
+            filePath: '/tmp/orphan.wav',
+            durationMs: 1000,
+            sizeBytes: 128,
+          ),
+        ),
+        throwsA(isA<DatabaseException>()),
+      );
+
       final session = await sessionRepo.createSession(
         RecordingSession.create(bufferSeconds: 30),
       );
-      final clipPath = await storageService.nextClipFilePath(
-        sessionId: session.id!,
+      await expectLater(
+        sessionRepo.moveSession(session.id!, folderId: 9999),
+        throwsA(isA<DatabaseException>()),
       );
-      await File(clipPath).writeAsBytes(<int>[10, 20, 30]);
-
-      final clip = await sessionRepo.addClip(
-        AudioClip.create(
-          sessionId: session.id!,
-          filePath: clipPath,
-          durationMs: 5000,
-          sizeBytes: 3,
-        ),
-      );
-
-      await sessionRepo.deleteSession(session.id!);
-
-      expect(await sessionRepo.getSession(session.id!), isNull);
-      expect(await sessionRepo.getClip(clip.id!), isNull);
-      expect(await File(clipPath).exists(), isFalse);
-      final sessionDir = await storageService.getSessionDirectory(session.id!);
-      // Directory was deleted; calling getSessionDirectory recreates it empty.
-      expect(await sessionDir.list().isEmpty, isTrue);
     });
   });
 }

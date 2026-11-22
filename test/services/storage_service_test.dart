@@ -52,6 +52,9 @@ void main() {
         expect(await storage.deleteFile(path), isFalse);
         expect(await storage.fileExists(path), isFalse);
         expect(await storage.fileSizeBytes(path), 0);
+        expect(await storage.fileExists(''), isFalse);
+        expect(await storage.fileSizeBytes('   '), 0);
+        expect(await storage.deleteFile(''), isFalse);
 
         final path2 = await storage.nextClipFilePath(sessionId: 8);
         await File(path2).writeAsBytes(<int>[4, 5]);

@@ -15,15 +15,30 @@ class DatabaseHelper {
   final String? _dbPath;
 
   Database? _database;
+  Future<Database>? _opening;
 
   Future<Database> get database async {
     final existing = _database;
     if (existing != null && existing.isOpen) {
       return existing;
     }
-    final opened = await _open();
-    _database = opened;
-    return opened;
+    final inFlight = _opening;
+    if (inFlight != null) {
+      return inFlight;
+    }
+    final future = _open();
+    _opening = future;
+    try {
+      final opened = await future;
+      if (identical(_opening, future)) {
+        _database = opened;
+      }
+      return opened;
+    } finally {
+      if (identical(_opening, future)) {
+        _opening = null;
+      }
+    }
   }
 
   Future<Database> _open() async {
@@ -62,7 +77,7 @@ class DatabaseHelper {
         name TEXT NOT NULL,
         started_at INTEGER NOT NULL,
         ended_at INTEGER NULL,
-        buffer_seconds INTEGER NOT NULL,
+        buffer_seconds INTEGER NOT NULL CHECK (buffer_seconds BETWEEN 1 AND 180),
         folder_id INTEGER NULL REFERENCES $foldersTable(id) ON DELETE SET NULL
       )
     ''');
@@ -73,8 +88,8 @@ class DatabaseHelper {
         session_id INTEGER NOT NULL REFERENCES $sessionsTable(id) ON DELETE CASCADE,
         name TEXT NOT NULL,
         file_path TEXT NOT NULL,
-        duration_ms INTEGER NOT NULL,
-        size_bytes INTEGER NOT NULL,
+        duration_ms INTEGER NOT NULL CHECK (duration_ms >= 0),
+        size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0),
         created_at INTEGER NOT NULL
       )
     ''');
@@ -98,6 +113,18 @@ class DatabaseHelper {
   }
 
   Future<void> close() async {
+    final inFlight = _opening;
+    _opening = null;
+    if (inFlight != null) {
+      try {
+        final opened = await inFlight;
+        if (opened.isOpen) {
+          await opened.close();
+        }
+      } catch (_) {
+        // Ignore open failure when closing.
+      }
+    }
     final db = _database;
     _database = null;
     if (db != null && db.isOpen) {

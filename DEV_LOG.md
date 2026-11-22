@@ -45,3 +45,9 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 ### Alternatives Rejected
 - **`ON DELETE CASCADE` on `sessions.folder_id`**: Rejected because accidentally deleting an organization folder should not destroy recorded audio sessions and `.wav` files; `SET NULL` is safer and reversible.
 - **Singleton-only `DatabaseHelper`**: Rejected in favor of an injectable constructor so `sqflite_common_ffi` tests stay isolated in memory.
+
+### Post-Review Hardening (Chunk 2)
+- Deduplicated concurrent `DatabaseHelper.database` opens via an in-flight `_opening` future and added SQLite `CHECK` constraints (`buffer_seconds BETWEEN 1 AND 180`, `duration_ms >= 0`, `size_bytes >= 0`).
+- Added `ArgumentError` guards for conflicting `rootOnly: true` + `folderId`/`parentId` filters, empty-path guard in `StorageService.fileSizeBytes()`, and `PathNotFoundException` handling on file/directory deletes.
+- Expanded `sqflite_common_ffi` tests to verify concurrent DB open, CHECK/FK violations, 3-level folder cascade deletes, `newestFirst` clip ordering, direct session directory removal, and lower-bound preference clamping.
+- Noted for Chunk 3: pass Dart's `StorageService.getSessionDirectory(sessionId)` path to Kotlin on `startSession` so Kotlin writes clips into the exact same directory Dart manages (`app_flutter/clips/...` vs `files/`).

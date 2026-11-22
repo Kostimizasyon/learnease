@@ -33,6 +33,11 @@ class FolderRepository {
     int? parentId,
     bool rootOnly = false,
   }) async {
+    if (rootOnly && parentId != null) {
+      throw ArgumentError(
+        'Cannot specify both rootOnly: true and a non-null parentId.',
+      );
+    }
     final db = await _databaseHelper.database;
     String? where;
     List<Object?>? whereArgs;

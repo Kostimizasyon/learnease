@@ -50,6 +50,11 @@ class SessionRepository {
     int? folderId,
     bool rootOnly = false,
   }) async {
+    if (rootOnly && folderId != null) {
+      throw ArgumentError(
+        'Cannot specify both rootOnly: true and a non-null folderId.',
+      );
+    }
     final db = await _databaseHelper.database;
     String? where;
     List<Object?>? whereArgs;
