@@ -33,12 +33,13 @@ class RecordButton extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 54,
+      height: 58,
       child: FilledButton.icon(
         onPressed: isLoading ? null : onPressed,
         style: FilledButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
+          shape: const StadiumBorder(),
         ),
         icon: isLoading
             ? SizedBox(
@@ -52,7 +53,10 @@ class RecordButton extends StatelessWidget {
             : Icon(_isStop ? Icons.stop_rounded : Icons.fiber_manual_record),
         label: Text(
           _isStop ? 'Stop Session' : 'Record Now',
-          style: theme.textTheme.titleMedium?.copyWith(color: foregroundColor),
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: foregroundColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

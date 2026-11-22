@@ -6,14 +6,19 @@ void main() {
     final startedAt = DateTime(2026, 1, 31, 14, 5);
     final endedAt = DateTime(2026, 1, 31, 14, 20);
 
-    test('create uses formatted default name and active state', () {
+    test('create uses S-DD:MM:YY default name and active state', () {
       final session = RecordingSession.create(
         bufferSeconds: 30,
         startedAt: startedAt,
       );
 
       expect(session.id, isNull);
-      expect(session.name, 'Session 2026-01-31 14:05');
+      expect(session.name, 'S-31:01:26');
+      expect(
+        RecordingSession.defaultName(DateTime(2026, 4, 5, 9, 0)),
+        'S-05:04:26',
+      );
+      expect(RecordingSession.presetBufferSeconds, <int>[5, 10, 15, 30, 60]);
       expect(session.startedAt, startedAt);
       expect(session.endedAt, isNull);
       expect(session.bufferSeconds, 30);
@@ -35,7 +40,7 @@ void main() {
       );
 
       expect(named.name, 'Podcast Notes');
-      expect(blank.name, 'Session 2026-01-31 14:05');
+      expect(blank.name, 'S-31:01:26');
     });
 
     test('create rejects out-of-range bufferSeconds', () {

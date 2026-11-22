@@ -135,7 +135,7 @@ abstract final class AppTheme {
     required Color scaffoldBackground,
     required AppRecordingColors recordingColors,
   }) {
-    final borderRadius = BorderRadius.circular(12);
+    final borderRadius = BorderRadius.circular(14);
 
     return ThemeData(
       useMaterial3: true,
@@ -146,17 +146,35 @@ abstract final class AppTheme {
         backgroundColor: scaffoldBackground,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
         color: colorScheme.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: borderRadius,
+          borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: colorScheme.outlineVariant),
         ),
         margin: EdgeInsets.zero,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colorScheme.surface,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: colorScheme.outlineVariant),
+        ),
+        titleTextStyle: TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: colorScheme.onSurface,
+        ),
+        contentTextStyle: TextStyle(
+          fontSize: 14,
+          height: 1.45,
+          color: colorScheme.onSurfaceVariant,
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -168,11 +186,11 @@ abstract final class AppTheme {
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(0, 48),
           shape: RoundedRectangleBorder(borderRadius: borderRadius),
-          side: BorderSide(color: colorScheme.outline),
+          side: BorderSide(color: colorScheme.outlineVariant),
         ),
       ),
       chipTheme: ChipThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: const StadiumBorder(),
         side: BorderSide(color: colorScheme.outlineVariant),
       ),
       inputDecorationTheme: InputDecorationTheme(

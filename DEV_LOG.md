@@ -131,3 +131,13 @@ Append-only log of architecture decisions, trade-offs, assumptions, and open que
 ### Decisions Made
 - **Atomic `AudioRingBuffer.snapshotAndClear()`**: Replaced `buffer.snapshot()` in `AudioCaptureEngine.saveClip()` with a synchronized `snapshotAndClear()` so extracting PCM and resetting/zeroing the ring buffer happen under one lock (no dropped frames between snapshot and clear, and zero audio overlap across consecutive saved clips).
 - **Immediate UI reset**: `AudioCaptureEngine.saveClip()` invokes `bufferedUpdateCallback(0L)` right after clearing so `ActiveSessionPage`'s buffer progress indicator resets to `0s` immediately while `.wav` writing runs asynchronously.
+
+---
+
+## 2026-11-22 — Home UI Refresh, Updated Buffer Presets, Modern Dialogs & `S-DD:MM:YY` Naming
+
+### Decisions Made
+- **Decluttered Home Screen**: Replaced stacked explanatory cards with a spacious, centered hero layout (tonal audio emblem, bold `${X}s` readout, flat stadium-pill `BufferLengthPicker`, stadium `RecordButton`, and a compact footer/AppBar info trigger opening the full playback-capture disclosure bottom sheet).
+- **Updated Presets**: Changed `RecordingSession.presetBufferSeconds` to `[5, 10, 15, 30, 60]` (keeping `1..180s` custom cap).
+- **Modern Alert Dialogs**: Added rounded 24dp `DialogThemeData`, circular tonal icon badges, centered headings/subtitles, rounded selectable folder rows in `AppDialog.pickFolder`, and full-width split Cancel/Confirm buttons across `AppDialog` and `_CustomBufferDialog`.
+- **Compact Session Naming (`S-DD:MM:YY`)**: Updated `RecordingSession.defaultName()` to zero-padded `S-DD:MM:YY` (2-digit day, month, and year) and surfaced `HH:mm` start time in `SessionTile`'s subtitle for easy same-day differentiation.

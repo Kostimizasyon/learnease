@@ -32,6 +32,7 @@ class BufferLengthChip extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ChoiceChip(
+      showCheckmark: false,
       label: Text(label),
       avatar: _isCustom
           ? Icon(
@@ -45,11 +46,17 @@ class BufferLengthChip extends StatelessWidget {
       selected: selected,
       onSelected: onSelected == null ? null : (_) => onSelected!(),
       selectedColor: colorScheme.primaryContainer,
+      backgroundColor: colorScheme.surfaceContainer,
+      side: BorderSide(
+        color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+      ),
       labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+        fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
         color: selected
             ? colorScheme.onPrimaryContainer
             : colorScheme.onSurface,
       ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
     );
   }
 }
@@ -84,27 +91,42 @@ class BufferLengthPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
     final approxMb = (selectedSeconds * 88200 / (1024 * 1024)).toStringAsFixed(
       1,
     );
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: <Widget>[
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('Replay Buffer Length', style: theme.textTheme.titleSmall),
             Text(
-              '~$approxMb MB RAM',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              'Replay Window',
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: colors.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: colors.surfaceContainer,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '~$approxMb MB RAM',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
         Wrap(
+          alignment: WrapAlignment.center,
           spacing: 8,
           runSpacing: 8,
           children: <Widget>[
@@ -167,19 +189,36 @@ class _CustomBufferDialogState extends State<_CustomBufferDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     return AlertDialog(
-      title: const Text('Custom Buffer Length'),
+      icon: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          color: colors.primaryContainer,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.tune_rounded,
+          color: colors.onPrimaryContainer,
+          size: 26,
+        ),
+      ),
+      title: const Text('Custom Buffer Length', textAlign: TextAlign.center),
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Text(
-            'Always keep the last X seconds in memory (max ${RecordingSession.maxBufferSeconds}s).',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            'Keep the last X seconds in memory (max ${RecordingSession.maxBufferSeconds}s).',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colors.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           TextField(
             controller: _controller,
             autofocus: true,
@@ -192,16 +231,31 @@ class _CustomBufferDialogState extends State<_CustomBufferDialog> {
               suffixText: 's',
               errorText: _errorText,
             ),
+            onChanged: (_) {
+              if (_errorText != null) {
+                setState(() => _errorText = null);
+              }
+            },
             onSubmitted: (_) => _submit(),
           ),
         ],
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
       actions: <Widget>[
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+        Row(
+          children: <Widget>[
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: FilledButton(onPressed: _submit, child: const Text('Set')),
+            ),
+          ],
         ),
-        FilledButton(onPressed: _submit, child: const Text('Set')),
       ],
     );
   }

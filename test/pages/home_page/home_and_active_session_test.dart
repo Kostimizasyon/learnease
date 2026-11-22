@@ -114,10 +114,10 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        // Idle home screen with disclosure notes & Record Now.
-        expect(find.text('Audio Instant Replay'), findsOneWidget);
+        // Idle home screen with clean hero readout, disclosure footer & Record Now.
+        expect(find.text('Audio instant replay • output only'), findsOneWidget);
         expect(find.text('Record Now'), findsOneWidget);
-        expect(find.textContaining('never the microphone'), findsOneWidget);
+        expect(find.textContaining('Never uses mic'), findsOneWidget);
 
         // Pick 60s preset and start session.
         await tester.tap(find.text('60s'));

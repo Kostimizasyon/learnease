@@ -32,16 +32,17 @@ void main() {
         ),
       );
 
+      expect(find.text('5s'), findsOneWidget);
+      expect(find.text('10s'), findsOneWidget);
       expect(find.text('15s'), findsOneWidget);
       expect(find.text('30s'), findsOneWidget);
       expect(find.text('60s'), findsOneWidget);
-      expect(find.text('120s'), findsOneWidget);
       expect(find.text('Custom'), findsOneWidget);
 
-      await tester.tap(find.text('60s'));
+      await tester.tap(find.text('10s'));
       await tester.pumpAndSettle();
 
-      expect(selected, 60);
+      expect(selected, 10);
     });
 
     testWidgets('custom dialog validates 1..180 range and updates chip label', (

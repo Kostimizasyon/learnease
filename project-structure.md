@@ -38,7 +38,7 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `lib/main.dart` — App entry point (`LearneseApp`) wiring services, `SessionController`, notification-tap tab routing, light/dark themes, and Record/Library navigation.
 - `lib/theme/app_colors.dart` — Centralized color palette (deep teal primary, neutral slate surfaces, red reserved for recording/destructive state, overlay tokens).
 - `lib/theme/app_theme.dart` — Material 3 `AppTheme.light()` / `AppTheme.dark()` and `AppRecordingColors` `ThemeExtension`.
-- `lib/data_models/recording_session.dart` — `RecordingSession` entity (`sessions` table), buffer bounds (`1..180s`), default naming (`Session YYYY-MM-DD HH:mm`), and serialization.
+- `lib/data_models/recording_session.dart` — `RecordingSession` entity (`sessions` table), buffer bounds (`1..180s`, presets `5/10/15/30/60s`), default naming (`S-DD:MM:YY`), and serialization.
 - `lib/data_models/audio_clip.dart` — `AudioClip` entity (`clips` table), default naming (`Clip N`), and serialization.
 - `lib/data_models/folder.dart` — `Folder` entity (`folders` table) with `Folder.root()` / `Folder.nested()` named constructors and serialization.
 - `lib/data_models/recording_state.dart` — `SessionStatus`, `CaptureError`, and `RecordingState` EventChannel payload model.
@@ -54,7 +54,7 @@ Build **Learnese** (`com.learnese.app`), an Android-only Flutter + Kotlin audio 
 - `lib/pages/util/app_dialog.dart` — Reusable dialogs with semantic named constructors (`AppDialog.rename()`, `AppDialog.createFolder()`, `AppDialog.confirmDelete()`, `AppDialog.pickFolder()`).
 - `lib/pages/util/custom_app_bar.dart` — `CustomAppBar.standard()` and `CustomAppBar.recording()` with live recording dot indicator.
 - `lib/pages/util/permission_gate.dart` — Reusable permission setup widget (`PermissionGate.sessionSetup()`, `PermissionGate.overlayOnly()`) with lifecycle-resume re-check after returning from Android overlay Settings.
-- `lib/pages/home_page/util/buffer_length_picker.dart` — `BufferLengthChip.preset()`, `BufferLengthChip.custom()`, and `BufferLengthPicker` (15/30/60/120s + custom 1–180s dialog + RAM estimate).
+- `lib/pages/home_page/util/buffer_length_picker.dart` — `BufferLengthChip.preset()`, `BufferLengthChip.custom()`, and `BufferLengthPicker` (5/10/15/30/60s + custom 1–180s dialog + RAM pill).
 - `lib/pages/home_page/util/record_button.dart` — `RecordButton.start()` and `RecordButton.stop()`.
 - `lib/pages/home_page/home_page.dart` — Idle recording setup screen (buffer length picker, Record Now, permission gate dialog, honest playback capture disclosure) transitioning seamlessly to `ActiveSessionPage`.
 - `lib/pages/home_page/active_session_page.dart` — Live recording session screen (buffer length X badge, rolling fill bar, clip count, Save Now, Stop Session, Open Library).

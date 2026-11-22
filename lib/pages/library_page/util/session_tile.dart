@@ -59,10 +59,13 @@ class _SessionTileState extends State<SessionTile> {
   }
 
   String _subtitle() {
+    final started = widget.session.startedAt;
+    final h = started.hour.toString().padLeft(2, '0');
+    final min = started.minute.toString().padLeft(2, '0');
     final count = widget.clips.length;
     final clipLabel = count == 1 ? '1 clip' : '$count clips';
     final statusSuffix = widget._isActive ? ' • Live' : '';
-    return '${widget.session.bufferSeconds}s buffer • $clipLabel$statusSuffix';
+    return '$h:$min • ${widget.session.bufferSeconds}s • $clipLabel$statusSuffix';
   }
 
   @override

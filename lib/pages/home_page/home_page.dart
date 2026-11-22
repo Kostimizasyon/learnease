@@ -50,6 +50,62 @@ class HomePage extends StatelessWidget {
     await controller.startSession();
   }
 
+  void _showCaptureInfoSheet(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (BuildContext _) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 4, 24, 28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Row(
+                  children: <Widget>[
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: colors.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.shield_outlined,
+                        color: colors.onPrimaryContainer,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'How Playback Capture Works',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '• Captures device audio output only — never the microphone.\n'
+                  '• Unsaved buffer audio stays strictly in RAM and is cleared on save or stop.\n'
+                  '• Continuous buffering uses battery/RAM and shows Android’s recording indicator.\n'
+                  '• Apps can opt out of capture and DRM/protected media records as silence.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurfaceVariant,
+                    height: 1.55,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -67,126 +123,140 @@ class HomePage extends StatelessWidget {
         final statusMessage = controller.statusMessage;
 
         return Scaffold(
-          appBar: const CustomAppBar.standard(title: 'Learnese'),
+          appBar: CustomAppBar.standard(
+            title: 'Learnese',
+            actions: <Widget>[
+              IconButton(
+                tooltip: 'How capture works',
+                onPressed: () => _showCaptureInfoSheet(context),
+                icon: const Icon(Icons.info_outline_rounded),
+              ),
+            ],
+          ),
           body: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: <Widget>[
-                Text(
-                  'Audio Instant Replay',
-                  style: theme.textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Keep a rolling buffer of device audio output in memory and tap the floating button anytime to save the last ${controller.selectedBufferSeconds}s.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
                   ),
-                ),
-                const SizedBox(height: 20),
-                if (statusMessage != null) ...<Widget>[
-                  Card(
-                    color: colors.errorContainer,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: <Widget>[
-                          Icon(
-                            Icons.info_outline_rounded,
-                            color: colors.onErrorContainer,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              statusMessage,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colors.onErrorContainer,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: controller.clearStatusMessage,
-                            icon: Icon(
-                              Icons.close_rounded,
-                              size: 18,
-                              color: colors.onErrorContainer,
-                            ),
-                            tooltip: 'Dismiss',
-                          ),
-                        ],
-                      ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - 32,
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: <Widget>[
-                        BufferLengthPicker(
-                          selectedSeconds: controller.selectedBufferSeconds,
-                          enabled: !controller.isBusy,
-                          onChanged: controller.setBufferSeconds,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Buffer length stays fixed for the entire session. Capture runs until you stop it.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                RecordButton.start(
-                  isLoading: controller.isBusy,
-                  onPressed: () => _handleRecordNow(context),
-                ),
-                const SizedBox(height: 24),
-                Card(
-                  color: colors.surfaceContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: <Widget>[
-                            Icon(
-                              Icons.shield_outlined,
-                              size: 18,
-                              color: colors.primary,
+                        if (statusMessage != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
                             ),
-                            const SizedBox(width: 8),
+                            decoration: BoxDecoration(
+                              color: colors.errorContainer,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Row(
+                              children: <Widget>[
+                                Icon(
+                                  Icons.info_outline_rounded,
+                                  size: 18,
+                                  color: colors.onErrorContainer,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    statusMessage,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: colors.onErrorContainer,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: controller.clearStatusMessage,
+                                  visualDensity: VisualDensity.compact,
+                                  icon: Icon(
+                                    Icons.close_rounded,
+                                    size: 18,
+                                    color: colors.onErrorContainer,
+                                  ),
+                                  tooltip: 'Dismiss',
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          const SizedBox(height: 8),
+                        Column(
+                          children: <Widget>[
+                            Container(
+                              width: 84,
+                              height: 84,
+                              decoration: BoxDecoration(
+                                color: colors.primaryContainer,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.graphic_eq_rounded,
+                                size: 40,
+                                color: colors.onPrimaryContainer,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
                             Text(
-                              'How Playback Capture Works',
-                              style: theme.textTheme.titleSmall,
+                              '${controller.selectedBufferSeconds}s',
+                              style: theme.textTheme.displayMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: colors.onSurface,
+                                letterSpacing: -1,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Audio instant replay • output only',
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            BufferLengthPicker(
+                              selectedSeconds: controller.selectedBufferSeconds,
+                              enabled: !controller.isBusy,
+                              onChanged: controller.setBufferSeconds,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '• Captures device audio output only — never the microphone.\n'
-                          '• Unsaved buffer audio stays strictly in RAM and is discarded when you stop.\n'
-                          '• Continuous buffering uses battery/RAM and shows Android’s recording indicator.\n'
-                          '• Apps can opt out of capture and DRM/protected media records as silence.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.onSurfaceVariant,
-                            height: 1.45,
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            const SizedBox(height: 28),
+                            RecordButton.start(
+                              isLoading: controller.isBusy,
+                              onPressed: () => _handleRecordNow(context),
+                            ),
+                            const SizedBox(height: 12),
+                            Center(
+                              child: TextButton(
+                                onPressed: () => _showCaptureInfoSheet(context),
+                                child: Text(
+                                  'RAM-only buffer • Never uses mic • DRM apps silent',
+                                  textAlign: TextAlign.center,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
         );

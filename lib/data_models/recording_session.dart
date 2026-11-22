@@ -68,7 +68,7 @@ class RecordingSession {
   static const int minBufferSeconds = 1;
   static const int maxBufferSeconds = 180;
   static const int defaultBufferSeconds = 30;
-  static const List<int> presetBufferSeconds = <int>[15, 30, 60, 120];
+  static const List<int> presetBufferSeconds = <int>[5, 10, 15, 30, 60];
 
   final int? id;
   final String name;
@@ -82,12 +82,10 @@ class RecordingSession {
   Duration? get duration => endedAt?.difference(startedAt);
 
   static String defaultName(DateTime timestamp) {
-    final y = timestamp.year.toString().padLeft(4, '0');
-    final m = timestamp.month.toString().padLeft(2, '0');
     final d = timestamp.day.toString().padLeft(2, '0');
-    final h = timestamp.hour.toString().padLeft(2, '0');
-    final min = timestamp.minute.toString().padLeft(2, '0');
-    return 'Session $y-$m-$d $h:$min';
+    final m = timestamp.month.toString().padLeft(2, '0');
+    final y = (timestamp.year % 100).toString().padLeft(2, '0');
+    return 'S-$d:$m:$y';
   }
 
   Map<String, Object?> toMap() {
